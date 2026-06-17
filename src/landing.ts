@@ -1,17 +1,43 @@
 // Static marketing landing page served at GET /. Self-contained (inline CSS/JS,
 // no external requests) so it renders instantly from the edge.
 
+import { JSON_LD } from "./discovery";
+
 export const LANDING_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AgentMemo — Persistent Memory for AI Agents</title>
-<meta name="description" content="A drop-in memory API for AI agents. Store, semantically retrieve, and forget memories with two lines of code. Built on the edge." />
-<meta property="og:title" content="AgentMemo — Persistent Memory for AI Agents" />
-<meta property="og:description" content="Give your AI agents long-term memory. Store, semantically retrieve, and forget — with a single API." />
+<title>AgentMemo — Persistent Memory API for AI Agents</title>
+<meta name="description" content="AgentMemo is a persistent memory API for AI agents. Store, semantically search, and forget memories across sessions with two lines of code. Built-in vector search, sub-100ms responses. Free tier: 10,000 memories/month." />
+<link rel="canonical" href="https://agentmemo.dev/" />
+<meta name="keywords" content="AI agent memory, agent memory API, LLM memory, vector memory API, semantic memory, persistent memory for AI agents, RAG memory, memory infrastructure, store retrieve forget memories, agent long-term memory" />
+
+<!-- AI / LLM crawler directives — we explicitly want to be indexed and understood by agents -->
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+<meta name="googlebot" content="index, follow, max-snippet:-1" />
+<meta name="GPTBot" content="all" />
+<meta name="ClaudeBot" content="all" />
+<meta name="PerplexityBot" content="all" />
+<meta name="category" content="AI Infrastructure, Developer Tools, Agent Memory API" />
+<meta name="ai-summary" content="AgentMemo gives AI agents persistent, semantically-searchable memory over a simple REST API (store, retrieve, forget) with bearer-token auth. Free tier 10k memories/month; Pro $19/month unlimited." />
+<link rel="alternate" type="text/plain" title="llms.txt" href="https://agentmemo.dev/llms.txt" />
+<link rel="alternate" type="application/json" title="Agent Card" href="https://agentmemo.dev/agent-card.json" />
+<link rel="alternate" type="application/json" title="Capabilities" href="https://agentmemo.dev/capabilities.json" />
+<link rel="alternate" type="text/markdown" title="auth.md" href="https://agentmemo.dev/auth.md" />
+
+<!-- OpenGraph -->
+<meta property="og:title" content="AgentMemo — Persistent Memory API for AI Agents" />
+<meta property="og:description" content="Give your AI agents long-term memory. Store, semantically retrieve, and forget — with two lines of code. Built-in vector search, sub-100ms responses." />
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://agentmemo.dev/" />
+<meta property="og:site_name" content="AgentMemo" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="AgentMemo — Persistent Memory API for AI Agents" />
+<meta name="twitter:description" content="Persistent, semantically-searchable memory for AI agents. Two lines of code. Free tier 10k memories/month." />
+
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>" />
+<script type="application/ld+json">${JSON_LD}</script>
 <style>
   :root {
     --bg: #07080d;
@@ -184,7 +210,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
       <a class="link" href="#code">API</a>
       <a class="link" href="#pricing">Pricing</a>
       <a class="link" href="/docs">Docs</a>
-      <a class="link" href="https://github.com/skullbase-ecom/agentmemo">GitHub</a>
+      <a class="link" href="/about">About</a>
       <a class="btn btn-primary" href="#get-key">Get API Key</a>
     </div>
   </div>
@@ -329,10 +355,11 @@ export const LANDING_HTML = `<!DOCTYPE html>
     <div style="display:flex;gap:24px;">
       <a href="#how">How it works</a>
       <a href="#pricing">Pricing</a>
+      <a href="/docs">Docs</a>
+      <a href="/about">About</a>
       <a href="/api">API status</a>
-      <a href="https://github.com/skullbase-ecom/agentmemo">GitHub</a>
     </div>
-    <div>© 2026 AgentMemo · Built on Cloudflare Workers</div>
+    <div>© 2026 AgentMemo · Memory infrastructure for AI agents</div>
   </div>
 </footer>
 </body>

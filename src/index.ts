@@ -3,7 +3,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { HTTPException } from "hono/http-exception";
-import type { Env, Variables } from "./types";
+import type { Env, Variables, AppContext } from "./types";
 import { apiKeyAuth } from "./middleware/auth";
 import { trackUsage, stripInternalHeaders } from "./middleware/usage";
 import memory from "./routes/memory";
@@ -12,6 +12,14 @@ import usage from "./routes/usage";
 import { LANDING_HTML } from "./landing";
 import { DOCS_HTML } from "./docs";
 import { AUTH_MD, AGENT_JSON } from "./wellknown";
+import { ABOUT_HTML } from "./about";
+import {
+  LLMS_TXT,
+  ROBOTS_TXT,
+  SITEMAP_XML,
+  CAPABILITIES_JSON,
+  AGENT_CARD,
+} from "./discovery";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -40,6 +48,12 @@ app.get("/docs", (c) => {
   return c.html(DOCS_HTML);
 });
 
+// About / founder page.
+app.get("/about", (c) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(ABOUT_HTML);
+});
+
 // auth.md agent-registration manifest (WorkOS auth.md open spec, api_key profile).
 app.get("/auth.md", (c) => {
   c.header("content-type", "text/markdown; charset=utf-8");
@@ -52,6 +66,35 @@ app.get("/.well-known/agent.json", (c) => {
   c.header("cache-control", "public, max-age=3600");
   return c.json(AGENT_JSON);
 });
+
+// ---- AI / agent discoverability surface --------------------------------
+const textRoute = (body: string, contentType: string) => (c: AppContext) => {
+  c.header("content-type", contentType);
+  c.header("cache-control", "public, max-age=3600");
+  return c.body(body);
+};
+
+// llms.txt — LLM-facing site guide (llmstxt.org).
+app.get("/llms.txt", textRoute(LLMS_TXT, "text/plain; charset=utf-8"));
+// robots.txt — explicitly allow AI crawlers.
+app.get("/robots.txt", textRoute(ROBOTS_TXT, "text/plain; charset=utf-8"));
+// sitemap.
+app.get("/sitemap.xml", textRoute(SITEMAP_XML, "application/xml; charset=utf-8"));
+
+// Machine-readable capability catalog.
+app.get("/capabilities.json", (c) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.json(CAPABILITIES_JSON);
+});
+
+// A2A AgentCard (Google Agent Card standard) — at the requested path and the
+// canonical .well-known location.
+const agentCard = (c: AppContext) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.json(AGENT_CARD);
+};
+app.get("/agent-card.json", agentCard);
+app.get("/.well-known/agent-card.json", agentCard);
 
 // Machine-readable API index.
 app.get("/api", (c) =>

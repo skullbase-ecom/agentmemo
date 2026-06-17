@@ -6,8 +6,29 @@ export const DOCS_HTML = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>API Docs — AgentMemo</title>
-<meta name="description" content="AgentMemo API reference: authenticate, store, retrieve, and forget agent memories with code examples." />
+<title>API Docs — AgentMemo Memory API for AI Agents</title>
+<meta name="description" content="AgentMemo API reference: authenticate with a bearer key, then store, semantically retrieve, and forget agent memories. Full endpoint reference with cURL and JavaScript examples." />
+<link rel="canonical" href="https://agentmemo.dev/docs" />
+<meta name="keywords" content="AgentMemo API, agent memory API docs, store memory endpoint, semantic retrieve API, vector memory REST API, LLM memory documentation" />
+
+<!-- AI / LLM crawler directives -->
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+<meta name="googlebot" content="index, follow, max-snippet:-1" />
+<meta name="GPTBot" content="all" />
+<meta name="ClaudeBot" content="all" />
+<meta name="PerplexityBot" content="all" />
+<meta name="ai-summary" content="REST API reference for AgentMemo. Endpoints: POST /memory/store, GET /memory/retrieve, DELETE /memory/forget, GET /usage. Bearer-token auth, scopes read/write." />
+<link rel="alternate" type="text/plain" title="llms.txt" href="https://agentmemo.dev/llms.txt" />
+<link rel="alternate" type="text/markdown" title="auth.md" href="https://agentmemo.dev/auth.md" />
+
+<!-- OpenGraph -->
+<meta property="og:title" content="AgentMemo API Reference" />
+<meta property="og:description" content="Authenticate, store, semantically retrieve, and forget agent memories. Full endpoint reference with code examples." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://agentmemo.dev/docs" />
+<meta property="og:site_name" content="AgentMemo" />
+<meta name="twitter:card" content="summary" />
+
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>" />
 <style>
   :root {
@@ -98,7 +119,7 @@ export const DOCS_HTML = `<!DOCTYPE html>
       <a href="/#how" class="hide">How it works</a>
       <a href="/#pricing" class="hide">Pricing</a>
       <a href="/docs">Docs</a>
-      <a href="https://github.com/skullbase-ecom/agentmemo">GitHub</a>
+      <a href="/about">About</a>
     </div>
   </div>
 </nav>
@@ -297,7 +318,7 @@ export const DOCS_HTML = `<!DOCTYPE html>
 }</code></pre>
     </div>
 
-    <footer>© 2026 AgentMemo · <a href="/">Home</a> · <a href="/docs">Docs</a> · Built on Cloudflare Workers</footer>
+    <footer>© 2026 AgentMemo · <a href="/">Home</a> · <a href="/docs">Docs</a> · <a href="/about">About</a></footer>
   </main>
 </div>
 </body>
