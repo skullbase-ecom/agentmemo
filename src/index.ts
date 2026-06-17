@@ -9,6 +9,9 @@ import { trackUsage, stripInternalHeaders } from "./middleware/usage";
 import memory from "./routes/memory";
 import auth from "./routes/auth";
 import usage from "./routes/usage";
+import { LANDING_HTML } from "./landing";
+import { DOCS_HTML } from "./docs";
+import { AUTH_MD, AGENT_JSON } from "./wellknown";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -25,7 +28,33 @@ app.use(
 );
 
 // ---- Public routes -------------------------------------------------------
-app.get("/", (c) =>
+// Marketing landing page (cached at the edge for an hour).
+app.get("/", (c) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(LANDING_HTML);
+});
+
+// API documentation page (cached at the edge for an hour).
+app.get("/docs", (c) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(DOCS_HTML);
+});
+
+// auth.md agent-registration manifest (WorkOS auth.md open spec, api_key profile).
+app.get("/auth.md", (c) => {
+  c.header("content-type", "text/markdown; charset=utf-8");
+  c.header("cache-control", "public, max-age=3600");
+  return c.body(AUTH_MD);
+});
+
+// Agent discovery metadata.
+app.get("/.well-known/agent.json", (c) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.json(AGENT_JSON);
+});
+
+// Machine-readable API index.
+app.get("/api", (c) =>
   c.json({
     name: "AgentMemo",
     description: "Agent Memory API — store, semantically retrieve, and forget agent memories.",
