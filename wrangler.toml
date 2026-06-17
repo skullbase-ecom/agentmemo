@@ -1,0 +1,44 @@
+name = "agentmemo"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Custom domain — agentmemo.dev is an active zone in this Cloudflare account.
+# custom_domain=true makes Cloudflare provision the DNS record + edge TLS cert.
+routes = [
+  { pattern = "agentmemo.dev", custom_domain = true }
+]
+
+# Serve only via the custom domain; disable the *.workers.dev URL.
+workers_dev = false
+
+# Workers AI binding — used to generate embeddings for semantic search.
+[ai]
+binding = "AI"
+
+# D1 — primary durable storage (api keys, memories, usage logs).
+# Run `wrangler d1 create agentmemo-db` and paste the returned database_id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "agentmemo-db"
+database_id = "2c172740-b049-492d-89d3-55ac19798fb9"
+
+# KV — caching layer (api-key lookups + retrieval result cache).
+# Run `wrangler kv namespace create CACHE` and paste the returned id below.
+[[kv_namespaces]]
+binding = "CACHE"
+id = "d0a729a2861e4c219d5c6f7f4214f99d"
+
+[vars]
+# Embedding model run on Workers AI. 768-dim output.
+EMBEDDING_MODEL = "@cf/baai/bge-base-en-v1.5"
+# TTL (seconds) for cached retrieval results.
+RETRIEVE_CACHE_TTL = "300"
+# TTL (seconds) for cached api-key auth lookups.
+AUTH_CACHE_TTL = "120"
+# Max candidate memories pulled from D1 before in-worker similarity ranking.
+RETRIEVE_CANDIDATE_LIMIT = "500"
+
+# ADMIN_SECRET is required to mint API keys (POST /auth/keys).
+# Set it as a secret, never commit it:
+#   wrangler secret put ADMIN_SECRET
