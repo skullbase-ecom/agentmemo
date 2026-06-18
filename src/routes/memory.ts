@@ -6,7 +6,7 @@ import { sha256Hex } from "../lib/crypto";
 import { embed, cosineSimilarity, approxTokens } from "../lib/embeddings";
 import { requireScope } from "../middleware/auth";
 import { classifyOne } from "../lib/classify";
-import { getAgentTrust, recordWrite, audit } from "../lib/security";
+import { getAgentTrust, recordWrite, adjustTrust, audit } from "../lib/security";
 
 const memory = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -149,8 +149,8 @@ memory.post("/store", requireScope("write"), async (c) => {
     )
     .run();
 
-  // Audit + trust accounting (fire-and-forget).
-  c.executionCtx.waitUntil(recordWrite(c.env, key.id, now));
+  // Audit + trust accounting (fire-and-forget). Burst/spam heuristics inside.
+  c.executionCtx.waitUntil(recordWrite(c.env, key.id, now, contentHash));
   c.executionCtx.waitUntil(
     audit(c.env, { memory_id: id, action: "store", api_key_id: key.id, trust_score: trust.trust_score, outcome, now }),
   );
@@ -191,7 +191,7 @@ memory.post("/store", requireScope("write"), async (c) => {
         confidence: Number(best.score.toFixed(4)),
         resolution: "store kept both; link via POST /memory/graph/link or DELETE the stale one",
       };
-      // Auto-link the contradiction in the graph.
+      // Auto-link the contradiction in the graph + penalize trust.
       c.executionCtx.waitUntil(
         c.env.DB.prepare(
           `INSERT INTO memory_links (id, api_key_id, from_id, to_id, relationship, created_at)
@@ -201,6 +201,7 @@ memory.post("/store", requireScope("write"), async (c) => {
           .run()
           .catch(() => {}),
       );
+      c.executionCtx.waitUntil(adjustTrust(c.env, key.id, -0.03, now, true));
     }
   }
 
