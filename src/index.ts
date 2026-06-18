@@ -8,6 +8,10 @@ import { apiKeyAuth } from "./middleware/auth";
 import { trackUsage, stripInternalHeaders } from "./middleware/usage";
 import { rateLimitPerKey, freeTierQuota } from "./middleware/limits";
 import memory from "./routes/memory";
+import episodes from "./routes/episodes";
+import procedures from "./routes/procedures";
+import working from "./routes/working";
+import emotional from "./routes/emotional";
 import auth from "./routes/auth";
 import usage from "./routes/usage";
 import signup from "./routes/signup";
@@ -28,6 +32,7 @@ import {
 import { MCP_MANIFEST, handleMcpRpc, type ApiCaller } from "./mcp";
 import { PROTECTED_RESOURCE_METADATA, AUTHORIZATION_SERVER_METADATA } from "./oauth-metadata";
 import { STATUS_HTML, runStatusChecks } from "./status";
+import { OBSERVATORY_HTML, runObservatory } from "./observatory";
 import { CHANGELOG_HTML } from "./changelog";
 import { NOT_FOUND_HTML, ERROR_HTML } from "./error-pages";
 
@@ -105,6 +110,16 @@ app.get("/status", (c) => {
 app.get("/status.json", async (c) => {
   c.header("cache-control", "no-store");
   return c.json(await runStatusChecks(c.env, Date.now()));
+});
+
+// Observatory — public, no-auth, anonymized live view of the agentic web.
+app.get("/observatory", (c) => {
+  c.header("cache-control", "no-store");
+  return c.html(OBSERVATORY_HTML);
+});
+app.get("/observatory.json", async (c) => {
+  c.header("cache-control", "public, max-age=60");
+  return c.json(await runObservatory(c.env, Date.now()));
 });
 
 // auth.md agent-registration manifest (WorkOS auth.md open spec, api_key profile).
@@ -241,6 +256,11 @@ app.use("/memory/*", stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerK
 app.use("/usage", stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerKey);
 app.use("/usage/*", stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerKey);
 
+// Memory-type sub-APIs (Phase 1). All under /memory/* so the protect chain applies.
+app.route("/memory/episodes", episodes);
+app.route("/memory/procedures", procedures);
+app.route("/memory/working", working);
+app.route("/memory/emotional", emotional);
 app.route("/memory", memory);
 app.route("/usage", usage);
 
@@ -252,7 +272,7 @@ function wantsHtml(c: AppContext): boolean {
 
 app.notFound((c) => {
   if (wantsHtml(c)) return c.html(NOT_FOUND_HTML, 404);
-  return c.json({ error: { status: 404, message: "not found" } }, 404);
+  return c.json({ error: "not found", code: "not_found", docs: "https://agentmemo.dev/docs" }, 404);
 });
 
 app.onError((err, c) => {
@@ -261,7 +281,10 @@ app.onError((err, c) => {
   }
   console.error("unhandled error", err);
   if (wantsHtml(c)) return c.html(ERROR_HTML, 500);
-  return c.json({ error: { status: 500, message: "internal server error" } }, 500);
+  return c.json(
+    { error: "internal server error", code: "internal_error", docs: "https://agentmemo.dev/docs" },
+    500,
+  );
 });
 
 export default app;

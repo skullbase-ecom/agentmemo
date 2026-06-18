@@ -135,6 +135,12 @@ export const DOCS_HTML = `<!DOCTYPE html>
     <a href="#store">Store a memory</a>
     <a href="#retrieve">Retrieve memories</a>
     <a href="#forget">Forget memories</a>
+    <div class="group">Memory types</div>
+    <a href="#types">Overview</a>
+    <a href="#episodic">Episodic</a>
+    <a href="#procedural">Procedural</a>
+    <a href="#working">Working</a>
+    <a href="#emotional">Emotional</a>
     <div class="group">Account</div>
     <a href="#usage">Usage</a>
     <div class="group">Integrations</div>
@@ -296,6 +302,37 @@ export const DOCS_HTML = `<!DOCTYPE html>
 <pre><code>{ <span class="tok-p">"deleted"</span>: <span class="tok-m">1</span> }</code></pre>
     </div>
 
+    <h2 id="types">Memory types</h2>
+    <p>Agents need more than facts. AgentMemo offers five human-like memory types, all under <code>/memory/*</code> with the same bearer auth. Semantic memory (<a href="#store">store</a>/<a href="#retrieve">retrieve</a>/<a href="#forget">forget</a>) also accepts <code>importance</code> (0&ndash;10), <code>ttl_seconds</code>, and <code>tags</code>.</p>
+
+    <h3 id="episodic">Episodic — sessions you can replay</h3>
+    <p>Record an ordered session of events and replay it later. Closing an episode auto-summarizes it.</p>
+    <div class="code-window"><div class="code-bar"><span class="lbl">cURL</span></div>
+<pre><code><span class="tok-c"># start → add events → end (auto-summary)</span>
+<span class="tok-f">curl</span> -X POST <span class="tok-m">/memory/episodes/start</span> -d <span class="tok-s">'{"agent_id":"a1","user_id":"u1","title":"Support chat"}'</span>
+<span class="tok-f">curl</span> -X POST <span class="tok-m">/memory/episodes/event</span> -d <span class="tok-s">'{"episode_id":"ep_...","content":"User reported login failure"}'</span>
+<span class="tok-f">curl</span> -X POST <span class="tok-m">/memory/episodes/end</span>   -d <span class="tok-s">'{"episode_id":"ep_..."}'</span>
+<span class="tok-f">curl</span> <span class="tok-m">/memory/episodes?id=ep_...</span>   <span class="tok-c"># full replay with events</span></code></pre></div>
+
+    <h3 id="procedural">Procedural — how to do things</h3>
+    <p>Store reusable workflows; find the right one for a task by meaning.</p>
+    <div class="code-window"><div class="code-bar"><span class="lbl">cURL</span></div>
+<pre><code><span class="tok-f">curl</span> -X POST <span class="tok-m">/memory/procedures</span> -d <span class="tok-s">'{"agent_id":"a1","name":"Generate report","trigger":"when user asks for a report","steps":["fetch data","analyze","format"]}'</span>
+<span class="tok-f">curl</span> <span class="tok-m">"/memory/procedures/match?agent_id=a1&q=user+wants+a+summary+document"</span>  <span class="tok-c"># → ranked procedures</span></code></pre></div>
+
+    <h3 id="working">Working — short-term RAM (1h TTL)</h3>
+    <p>Per-session scratchpad that auto-expires after an hour.</p>
+    <div class="code-window"><div class="code-bar"><span class="lbl">cURL</span></div>
+<pre><code><span class="tok-f">curl</span> -X POST <span class="tok-m">/memory/working</span>   -d <span class="tok-s">'{"session_id":"s1","content":{"step":"awaiting confirmation"}}'</span>
+<span class="tok-f">curl</span> <span class="tok-m">"/memory/working?session_id=s1"</span>
+<span class="tok-f">curl</span> -X DELETE <span class="tok-m">"/memory/working?session_id=s1"</span></code></pre></div>
+
+    <h3 id="emotional">Emotional — sentiment &amp; trust</h3>
+    <p>Record how interactions felt; get a per-user profile and trust score.</p>
+    <div class="code-window"><div class="code-bar"><span class="lbl">cURL</span></div>
+<pre><code><span class="tok-f">curl</span> -X POST <span class="tok-m">/memory/emotional</span> -d <span class="tok-s">'{"agent_id":"a1","user_id":"u1","sentiment":"positive","intensity":8}'</span>
+<span class="tok-f">curl</span> <span class="tok-m">"/memory/emotional/profile?user_id=u1&agent_id=a1"</span>  <span class="tok-c"># → { trust_score, dominant_sentiment, counts }</span></code></pre></div>
+
     <!-- USAGE -->
     <div class="endpoint" id="usage">
       <span class="method m-get">GET</span><span class="path">/usage</span>
@@ -324,7 +361,7 @@ export const DOCS_HTML = `<!DOCTYPE html>
   <span class="tok-p">"by_route"</span>: [ { <span class="tok-p">"route"</span>: <span class="tok-s">"POST /memory/store"</span>, <span class="tok-p">"requests"</span>: <span class="tok-m">90</span> } ]
 }</code></pre>
     </div>
-    <p>Free tier allows <b>10,000 operations/month</b>; over the limit, memory calls return <code>429 { "error": "free tier limit reached" }</code>. <a href="/pricing">Upgrade to Pro</a> for unlimited.</p>
+    <p><b>Beta:</b> usage is free and unlimited — no operation limits. <code>used</code> is informational only. (A standard per-key rate limit still applies as abuse protection.)</p>
 
     <h2 id="signup">Get an API key</h2>
     <p>Self-serve and agent-first — no auth, no email, no approval. The key is returned directly in the response. <a href="/signup">Use the signup page</a>, or register programmatically:</p>

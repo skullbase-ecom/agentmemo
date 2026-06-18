@@ -6,11 +6,11 @@ export const PRICING_HTML = `<!DOCTYPE html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Pricing — AgentMemo</title>
-<meta name="description" content="AgentMemo pricing. Free tier: 10,000 memory operations per month. Pro: $19/month for unlimited operations." />
+<meta name="description" content="AgentMemo pricing. Free and unlimited during public beta — no usage limits. Future plans shown below." />
 <meta name="robots" content="index, follow, max-snippet:-1" />
 <link rel="canonical" href="https://agentmemo.dev/pricing" />
 <meta property="og:title" content="AgentMemo Pricing" />
-<meta property="og:description" content="Free: 10,000 operations/month. Pro: $19/month unlimited." />
+<meta property="og:description" content="Free and unlimited during public beta. No usage limits." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://agentmemo.dev/pricing" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>" />
@@ -68,46 +68,46 @@ export const PRICING_HTML = `<!DOCTYPE html>
 
 <div class="wrap">
   <div class="eyebrow">Pricing</div>
-  <h1>Start free. Scale when <span class="accent-text">your agents do</span>.</h1>
-  <p class="sub">Pay for memory, not meetings. No setup fees, no per-seat pricing.</p>
+  <h1>Free &amp; unlimited <span class="accent-text">during beta</span>.</h1>
+  <p class="sub">AgentMemo is in public beta — everything is free with no usage limits. The plans below are our planned post-beta pricing.</p>
 
   <div class="cards">
-    <div class="card">
-      <div class="tier">Free</div>
-      <div class="amount">$0<span> / month</span></div>
-      <p style="color:var(--muted);font-size:14px">For prototypes and side projects.</p>
-      <ul>
-        <li><span class="chk">✓</span> 10,000 operations / month</li>
-        <li><span class="chk">✓</span> Semantic retrieval included</li>
-        <li><span class="chk">✓</span> Edge-cached, sub-100ms</li>
-        <li><span class="chk">✓</span> 1 API key</li>
-        <li><span class="chk">✓</span> Community support</li>
-      </ul>
-      <a class="btn btn-ghost" href="/signup">Get started free</a>
-    </div>
     <div class="card pro">
-      <span class="pop">Most popular</span>
-      <div class="tier accent-text">Pro</div>
-      <div class="amount">$19<span> / month</span></div>
-      <p style="color:var(--muted);font-size:14px">For production agents at scale.</p>
+      <span class="pop">Now — beta</span>
+      <div class="tier accent-text">Beta</div>
+      <div class="amount">$0<span> / unlimited</span></div>
+      <p style="color:var(--muted);font-size:14px">Everything, free, while we're in beta.</p>
       <ul>
-        <li><span class="chk">✓</span> <b style="color:var(--text)">Unlimited</b> operations</li>
+        <li><span class="chk">✓</span> <b style="color:var(--text)">Unlimited</b> operations — no caps</li>
+        <li><span class="chk">✓</span> All memory types (semantic, episodic, procedural, working, emotional)</li>
+        <li><span class="chk">✓</span> Semantic retrieval, edge-cached, sub-100ms</li>
+        <li><span class="chk">✓</span> MCP server + multi-agent (rolling out)</li>
+        <li><span class="chk">✓</span> No credit card</li>
+      </ul>
+      <a class="btn btn-primary" href="/signup">Get your free key</a>
+    </div>
+    <div class="card">
+      <div class="tier">Pro <span style="color:var(--faint)">(after beta)</span></div>
+      <div class="amount">$19<span> / month</span></div>
+      <p style="color:var(--muted);font-size:14px">Planned pricing once beta ends.</p>
+      <ul>
+        <li><span class="chk">✓</span> Unlimited operations</li>
         <li><span class="chk">✓</span> Priority embedding queue</li>
         <li><span class="chk">✓</span> Unlimited API keys & scopes</li>
         <li><span class="chk">✓</span> Usage analytics</li>
         <li><span class="chk">✓</span> Email support</li>
       </ul>
-      <a class="btn btn-primary" href="/signup?plan=pro">Upgrade to Pro</a>
+      <a class="btn btn-ghost" href="/signup">Start free now</a>
     </div>
   </div>
 
   <div class="faq">
+    <h3>What does beta cost?</h3>
+    <p>Nothing. During the public beta, AgentMemo is free and unlimited — no operation caps. A standard per-key rate limit applies purely as abuse protection.</p>
+    <h3>What happens to my key after beta?</h3>
+    <p>Your existing API key keeps working. We'll give plenty of notice before any pricing takes effect.</p>
     <h3>What counts as an operation?</h3>
-    <p>Any memory API call — storing, retrieving, or forgetting a memory. The free tier resets on the 1st of each month.</p>
-    <h3>What happens when I hit the free limit?</h3>
-    <p>Requests return a clear 429 until the month resets or you upgrade to Pro for unlimited usage.</p>
-    <h3>How do I upgrade?</h3>
-    <p>Start on the free tier, then upgrade to Pro anytime — your existing API key keeps working, with the limit lifted.</p>
+    <p>Any memory API call — storing, retrieving, or forgetting a memory. (Tracked for analytics; not capped during beta.)</p>
   </div>
 </div>
 

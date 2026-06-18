@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS memories (
   content     TEXT NOT NULL,
   metadata    TEXT NOT NULL DEFAULT '{}',    -- JSON object
   embedding   TEXT,                          -- JSON float[] (nullable if AI unavailable)
+  importance  INTEGER NOT NULL DEFAULT 0,    -- 0..10, boosts ranking / compression priority
+  expires_at  INTEGER,                       -- unix ms; memory ignored after this
+  tags        TEXT,                          -- comma-separated tags
   created_at  INTEGER NOT NULL,              -- unix ms
   updated_at  INTEGER NOT NULL,
   FOREIGN KEY (api_key_id) REFERENCES api_keys (id) ON DELETE CASCADE
@@ -70,3 +73,66 @@ CREATE INDEX IF NOT EXISTS idx_usage_key_time
 
 CREATE INDEX IF NOT EXISTS idx_usage_key_day
   ON usage_events (api_key_id, day);
+
+-- ---------------------------------------------------------------------------
+-- PHASE 1: MEMORY TYPES
+-- ---------------------------------------------------------------------------
+
+-- Episodic memory: ordered sessions of events.
+CREATE TABLE IF NOT EXISTS episodes (
+  id          TEXT PRIMARY KEY,             -- ep_...
+  api_key_id  TEXT NOT NULL,
+  agent_id    TEXT NOT NULL,
+  user_id     TEXT,
+  title       TEXT,
+  status      TEXT NOT NULL DEFAULT 'open', -- 'open' | 'closed'
+  summary     TEXT,
+  event_count INTEGER NOT NULL DEFAULT 0,
+  started_at  INTEGER NOT NULL,
+  ended_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_episodes_scope ON episodes (api_key_id, agent_id, started_at);
+
+CREATE TABLE IF NOT EXISTS episode_events (
+  id          TEXT PRIMARY KEY,             -- evt_...
+  episode_id  TEXT NOT NULL,
+  api_key_id  TEXT NOT NULL,
+  seq         INTEGER NOT NULL,
+  type        TEXT NOT NULL DEFAULT 'event',
+  content     TEXT NOT NULL,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_episode_events ON episode_events (episode_id, seq);
+
+-- Procedural memory: how to do things (steps), matched semantically.
+CREATE TABLE IF NOT EXISTS procedures (
+  id          TEXT PRIMARY KEY,             -- proc_...
+  api_key_id  TEXT NOT NULL,
+  agent_id    TEXT NOT NULL,
+  name        TEXT NOT NULL,
+  description TEXT,
+  steps       TEXT NOT NULL DEFAULT '[]',   -- JSON array of step strings
+  trigger     TEXT,                         -- when to use this procedure
+  embedding   TEXT,                         -- JSON float[] for matching
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_procedures_scope ON procedures (api_key_id, agent_id);
+
+-- Emotional memory: sentiment of interactions, per user.
+CREATE TABLE IF NOT EXISTS emotional_memories (
+  id          TEXT PRIMARY KEY,             -- emo_...
+  api_key_id  TEXT NOT NULL,
+  agent_id    TEXT NOT NULL,
+  user_id     TEXT NOT NULL,
+  sentiment   TEXT NOT NULL,                -- 'positive' | 'negative' | 'neutral'
+  intensity   INTEGER NOT NULL DEFAULT 5,   -- 1..10
+  note        TEXT,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_emotional_scope ON emotional_memories (api_key_id, agent_id, user_id);
+
+-- Semantic memory enhancements (importance, TTL, tags) live on `memories`:
+--   ALTER TABLE memories ADD COLUMN importance INTEGER NOT NULL DEFAULT 0;
+--   ALTER TABLE memories ADD COLUMN expires_at INTEGER;
+--   ALTER TABLE memories ADD COLUMN tags TEXT;
+-- (Included in the CREATE below for fresh installs.)

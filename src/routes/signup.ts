@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Env, Variables } from "../types";
 import { fail, requireString } from "../lib/http";
 import { generateApiKey, sha256Hex } from "../lib/crypto";
-import { bumpRateWindow, signupRateLimitPerHour, nextMonthReset, freeTierLimit } from "../lib/quota";
+import { bumpRateWindow, signupRateLimitPerHour, nextMonthReset } from "../lib/quota";
 import { SIGNUP_HTML } from "../signup-page";
 
 const signup = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -50,7 +50,6 @@ signup.post("/", async (c) => {
   const keyHash = await sha256Hex(secret);
   const now = Date.now();
   const reset = nextMonthReset(now);
-  const limit = freeTierLimit(c.env);
 
   await c.env.DB.prepare(
     `INSERT INTO api_keys (id, key_hash, name, owner, scopes, tier, source, monthly_usage, usage_reset_date, created_at)
@@ -64,9 +63,10 @@ signup.post("/", async (c) => {
     {
       id,
       api_key: secret, // shown exactly once
-      tier: "free",
-      limit,
-      reset_date: reset,
+      tier: "beta",
+      limit: null,
+      unlimited: true,
+      beta: true,
       scopes: ["read", "write"],
       docs: "https://agentmemo.dev/docs",
       mcp: "https://agentmemo.dev/mcp",

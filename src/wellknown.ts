@@ -157,10 +157,9 @@ and daily buckets for the calling key.
 
 ## Pricing
 
-| Tier | Price | Limit |
-| ---- | ----- | ----- |
-| \`free\` | $0 / month | 10,000 memories / month |
-| \`pro\` | $19 / month | Unlimited memories |
+**Public beta: free and unlimited — no operation limits.** A per-key rate limit
+(100 req/min) applies as abuse protection only. Paid plans arrive after beta;
+existing keys keep working.
 
 ## Errors
 
@@ -247,14 +246,10 @@ export const AGENT_JSON = {
   ],
   pricing: [
     {
-      tier: "free",
+      tier: "beta",
       price_usd_monthly: 0,
-      limits: { memories_per_month: 10000 },
-    },
-    {
-      tier: "pro",
-      price_usd_monthly: 19,
-      limits: { memories_per_month: null },
+      unlimited: true,
+      note: "Free and unlimited during public beta — no operation limits.",
     },
   ],
   endpoints: {

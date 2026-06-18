@@ -9,8 +9,13 @@ interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: "June 18, 2026",
+    title: "Memory types, intelligence layer & free unlimited beta",
+    body: "Five memory types (semantic, episodic, procedural, working, emotional), embedding cache, a public Observatory, and standardized errors. Usage is now free and unlimited during the public beta — no operation limits.",
+  },
+  {
+    date: "June 18, 2026",
     title: "AgentMemo launches",
-    body: "Persistent memory API for AI agents. Semantic search, MCP server, agent self-registration via POST /signup. Free tier: 10k operations/month.",
+    body: "Persistent memory API for AI agents. Semantic search, MCP server, agent self-registration via POST /signup.",
   },
 ];
 

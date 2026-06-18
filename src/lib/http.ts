@@ -1,15 +1,34 @@
 import { HTTPException } from "hono/http-exception";
 
 /** Throw a 4xx with a structured JSON body. */
+const CODE_BY_STATUS: Record<number, string> = {
+  400: "bad_request",
+  401: "unauthorized",
+  402: "payment_required",
+  403: "forbidden",
+  404: "not_found",
+  409: "conflict",
+  429: "rate_limited",
+};
+
+/**
+ * Throw a 4xx with the standard error shape: { error, code, docs }.
+ * `code` is derived from the status (or pass an explicit one).
+ */
 export function fail(
   status: 400 | 401 | 402 | 403 | 404 | 409 | 429,
   message: string,
+  code?: string,
 ): never {
   throw new HTTPException(status, {
-    res: new Response(JSON.stringify({ error: { status, message } }), {
-      status,
-      headers: { "content-type": "application/json" },
-    }),
+    res: new Response(
+      JSON.stringify({
+        error: message,
+        code: code ?? CODE_BY_STATUS[status] ?? "error",
+        docs: "https://agentmemo.dev/docs",
+      }),
+      { status, headers: { "content-type": "application/json" } },
+    ),
   });
 }
 

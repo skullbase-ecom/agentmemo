@@ -41,6 +41,9 @@ export interface MemoryRow {
   content: string;
   metadata: string;
   embedding: string | null;
+  importance: number;
+  expires_at: number | null;
+  tags: string | null;
   created_at: number;
   updated_at: number;
 }

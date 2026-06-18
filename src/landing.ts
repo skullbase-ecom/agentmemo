@@ -9,7 +9,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>AgentMemo — Persistent Memory API for AI Agents</title>
-<meta name="description" content="AgentMemo is a persistent memory API for AI agents. Store, semantically search, and forget memories across sessions with two lines of code. Built-in vector search, sub-100ms responses. Free tier: 10,000 memories/month." />
+<meta name="description" content="AgentMemo is a persistent memory API for AI agents. Store, semantically search, and forget memories across sessions with two lines of code. Built-in vector search, sub-100ms responses. Free and unlimited during public beta." />
 <link rel="canonical" href="https://agentmemo.dev/" />
 <meta name="keywords" content="AI agent memory, agent memory API, LLM memory, vector memory API, semantic memory, persistent memory for AI agents, RAG memory, memory infrastructure, store retrieve forget memories, agent long-term memory" />
 
@@ -20,7 +20,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
 <meta name="ClaudeBot" content="all" />
 <meta name="PerplexityBot" content="all" />
 <meta name="category" content="AI Infrastructure, Developer Tools, Agent Memory API" />
-<meta name="ai-summary" content="AgentMemo gives AI agents persistent, semantically-searchable memory over a simple REST API (store, retrieve, forget) with bearer-token auth. Free tier 10k memories/month; Pro $19/month unlimited." />
+<meta name="ai-summary" content="AgentMemo gives AI agents persistent, semantically-searchable memory over a simple REST API (store, retrieve, forget) with bearer-token auth. Free and unlimited during public beta." />
 <link rel="alternate" type="text/plain" title="llms.txt" href="https://agentmemo.dev/llms.txt" />
 <link rel="alternate" type="application/json" title="Agent Card" href="https://agentmemo.dev/agent-card.json" />
 <link rel="alternate" type="application/json" title="Capabilities" href="https://agentmemo.dev/capabilities.json" />
@@ -34,7 +34,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
 <meta property="og:site_name" content="AgentMemo" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="AgentMemo — Persistent Memory API for AI Agents" />
-<meta name="twitter:description" content="Persistent, semantically-searchable memory for AI agents. Two lines of code. Free tier 10k memories/month." />
+<meta name="twitter:description" content="Persistent, semantically-searchable memory for AI agents. Two lines of code. Free and unlimited during public beta." />
 
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>" />
 <script type="application/ld+json">${JSON_LD}</script>
@@ -225,7 +225,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
       <a class="btn btn-primary btn-lg" href="#get-key">Get your API key →</a>
       <a class="btn btn-ghost btn-lg" href="#code">View the API</a>
     </div>
-    <p class="trust">No credit card required · 10,000 memories free every month</p>
+    <p class="trust">◆ Free &amp; unlimited during beta · ◆ No credit card · ◆ Agent-native</p>
   </div>
 </header>
 
@@ -302,15 +302,15 @@ export const LANDING_HTML = `<!DOCTYPE html>
 <section id="pricing">
   <div class="wrap center">
     <span class="eyebrow">Pricing</span>
-    <h2>Start free. Scale when you're ready.</h2>
-    <p class="section-sub">No setup fees. No per-seat pricing. Pay for memory, not meetings.</p>
+    <h2>Free &amp; unlimited during beta.</h2>
+    <p class="section-sub">Everything is free with no usage limits while we're in public beta. Future pricing shown below.</p>
     <div class="cards-2">
       <div class="price-card">
         <div class="tier">Free</div>
         <div class="amount">$0<span> / month</span></div>
         <p style="color:var(--muted);font-size:14px;">For prototypes and side projects.</p>
         <ul>
-          <li><span class="chk">✓</span> 10,000 memories / month</li>
+          <li><span class="chk">✓</span> Unlimited operations (beta)</li>
           <li><span class="chk">✓</span> Semantic retrieval included</li>
           <li><span class="chk">✓</span> Edge caching</li>
           <li><span class="chk">✓</span> 1 API key</li>
@@ -340,7 +340,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
   <div class="wrap">
     <div class="final">
       <h2>Ship agents that <span class="accent-text">remember</span>.</h2>
-      <p>Create a free API key and store your first memory in under a minute. 10,000 operations/month, no credit card.</p>
+      <p>Create a free API key and store your first memory in under a minute. Free &amp; unlimited during beta, no credit card.</p>
 
       <form id="signupForm" style="max-width:380px;margin:8px auto 0;text-align:left;">
         <div class="su-err" id="suErr" style="display:none;color:#ff6b81;font-size:14px;margin-bottom:12px;"></div>

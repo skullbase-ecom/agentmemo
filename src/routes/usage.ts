@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import type { Env, Variables } from "../types";
 import { parseLimit } from "../lib/http";
-import { freeTierLimit } from "../lib/quota";
 
 const usage = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -62,19 +61,19 @@ usage.get("/", async (c) => {
     .first<{ tier: string; monthly_usage: number; usage_reset_date: number | null }>();
 
   const tier = acct?.tier ?? key.tier ?? "free";
-  const limit = freeTierLimit(c.env);
   const used = acct?.monthly_usage ?? 0;
 
   return c.json({
     api_key_id: key.id,
     name: key.name,
-    // Top-level quota fields.
+    // BETA: usage is free and unlimited — `used` is informational only.
     used,
-    limit: tier === "free" ? limit : null,
+    limit: null,
     tier,
     reset_date: acct?.usage_reset_date ?? null,
-    remaining: tier === "free" ? Math.max(0, limit - used) : null,
-    unlimited: tier !== "free",
+    remaining: null,
+    unlimited: true,
+    beta: true,
     window: { from: lower, to: upper },
     totals: {
       requests: totals?.requests ?? 0,

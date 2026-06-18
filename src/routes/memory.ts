@@ -12,6 +12,9 @@ interface StoreBody {
   agent_id?: unknown;
   content?: unknown;
   metadata?: unknown;
+  importance?: unknown;
+  ttl_seconds?: unknown;
+  tags?: unknown;
 }
 
 /** POST /memory/store — persist a memory and its embedding. */
@@ -28,6 +31,27 @@ memory.post("/store", requireScope("write"), async (c) => {
       fail(400, "'metadata' must be a JSON object");
     }
     metadata = JSON.stringify(body.metadata);
+  }
+
+  // Semantic-memory enhancements: importance (0..10), TTL, tags.
+  let importance = 0;
+  if (body.importance !== undefined) {
+    const n = Number(body.importance);
+    if (!Number.isFinite(n) || n < 0 || n > 10) fail(400, "'importance' must be a number 0..10");
+    importance = Math.round(n);
+  }
+  let expiresAt: number | null = null;
+  if (body.ttl_seconds !== undefined) {
+    const n = Number(body.ttl_seconds);
+    if (!Number.isFinite(n) || n <= 0) fail(400, "'ttl_seconds' must be a positive number");
+    expiresAt = Date.now() + Math.round(n) * 1000;
+  }
+  let tags: string | null = null;
+  if (body.tags !== undefined && body.tags !== null) {
+    if (!Array.isArray(body.tags) || body.tags.some((t) => typeof t !== "string")) {
+      fail(400, "'tags' must be an array of strings");
+    }
+    tags = (body.tags as string[]).map((t) => t.trim()).filter(Boolean).join(",") || null;
   }
 
   const key = c.get("apiKey");
@@ -47,10 +71,10 @@ memory.post("/store", requireScope("write"), async (c) => {
   }
 
   await c.env.DB.prepare(
-    `INSERT INTO memories (id, api_key_id, user_id, agent_id, content, metadata, embedding, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO memories (id, api_key_id, user_id, agent_id, content, metadata, embedding, importance, expires_at, tags, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
-    .bind(id, key.id, userId, agentId, content, metadata, embedding, now, now)
+    .bind(id, key.id, userId, agentId, content, metadata, embedding, importance, expiresAt, tags, now, now)
     .run();
 
   // Invalidate cached retrieval results for this scope.
@@ -64,6 +88,9 @@ memory.post("/store", requireScope("write"), async (c) => {
       agent_id: agentId,
       content,
       metadata: JSON.parse(metadata),
+      importance,
+      tags: tags ? tags.split(",") : [],
+      expires_at: expiresAt,
       embedded: embedding !== null,
       created_at: now,
     },
@@ -106,14 +133,15 @@ memory.get("/retrieve", requireScope("read"), async (c) => {
     console.error("embedding failed on retrieve", String(err));
   }
 
-  // Pull candidate rows for the scope.
+  // Pull candidate rows for the scope, skipping expired (TTL) memories.
+  const nowTs = Date.now();
   const where = agentId
-    ? `api_key_id = ? AND user_id = ? AND agent_id = ?`
-    : `api_key_id = ? AND user_id = ?`;
-  const binds = agentId ? [key.id, userId, agentId] : [key.id, userId];
+    ? `api_key_id = ? AND user_id = ? AND agent_id = ? AND (expires_at IS NULL OR expires_at > ?)`
+    : `api_key_id = ? AND user_id = ? AND (expires_at IS NULL OR expires_at > ?)`;
+  const binds = agentId ? [key.id, userId, agentId, nowTs] : [key.id, userId, nowTs];
 
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, agent_id, content, metadata, embedding, created_at, updated_at
+    `SELECT id, user_id, agent_id, content, metadata, embedding, importance, tags, created_at, updated_at
      FROM memories WHERE ${where}
      ORDER BY created_at DESC LIMIT ?`,
   )
@@ -143,6 +171,8 @@ memory.get("/retrieve", requireScope("read"), async (c) => {
       agent_id: row.agent_id,
       content: row.content,
       metadata: safeJson(row.metadata),
+      importance: row.importance ?? 0,
+      tags: row.tags ? row.tags.split(",") : [],
       score: queryVec ? Number(score.toFixed(6)) : null,
       created_at: row.created_at,
     }));

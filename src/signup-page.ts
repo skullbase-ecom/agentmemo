@@ -7,7 +7,7 @@ export const SIGNUP_HTML = `<!DOCTYPE html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Get your API key — AgentMemo</title>
-<meta name="description" content="Create a free AgentMemo API key instantly. 10,000 memory operations per month, no credit card." />
+<meta name="description" content="Create a free AgentMemo API key instantly. Free and unlimited during public beta, no credit card." />
 <meta name="robots" content="index, follow" />
 <link rel="canonical" href="https://agentmemo.dev/signup" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>" />
@@ -60,9 +60,9 @@ export const SIGNUP_HTML = `<!DOCTYPE html>
 </div></nav>
 
 <div class="wrap">
-  <div class="eyebrow">Free tier · No credit card</div>
+  <div class="eyebrow">Public beta · Free &amp; unlimited · No credit card</div>
   <h1>Get your <span class="accent-text">API key</span></h1>
-  <p class="sub">Create a free key instantly — 10,000 memory operations every month.</p>
+  <p class="sub">Create a key instantly — free and unlimited while we're in public beta.</p>
 
   <div class="card" id="formCard">
     <div class="err" id="err"></div>
@@ -73,7 +73,7 @@ export const SIGNUP_HTML = `<!DOCTYPE html>
       <input id="email" name="email" type="email" placeholder="you@example.com" maxlength="256" />
       <button type="submit" id="submit">Create my API key</button>
     </form>
-    <p class="fine">By signing up you agree to fair use of the free tier. Your key appears instantly below — copy it now, it's shown only once.</p>
+    <p class="fine">Free and unlimited during beta. Your key appears instantly below — copy it now, it's shown only once.</p>
   </div>
 
   <div class="card result" id="result">
