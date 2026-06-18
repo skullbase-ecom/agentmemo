@@ -1,5 +1,16 @@
 import { Hono } from "hono";
 import type { Env, Variables } from "../types";
+import { fail, requireString, parseLimit } from "../lib/http";
+import { webhookId } from "../lib/ids";
+import { requireScope } from "../middleware/auth";
+
+const WEBHOOK_EVENTS = [
+  "memory.stored",
+  "memory.retrieved",
+  "memory.deleted",
+  "usage.limit_approaching",
+  "agent.registered",
+];
 
 // Dodo Payments webhook. Dodo uses Standard Webhooks signing (webhook-id,
 // webhook-timestamp, webhook-signature headers; HMAC-SHA256 over
@@ -8,6 +19,42 @@ import type { Env, Variables } from "../types";
 // tier; on cancellation/refund we downgrade to Free.
 
 const webhooks = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+/** POST /webhooks/register — register a webhook URL for memory events (auth required). */
+webhooks.post("/register", requireScope("write"), async (c) => {
+  const body = (await c.req.json().catch(() => fail(400, "invalid JSON body"))) as Record<string, unknown>;
+  const url = requireString(body.url, "url", 2000);
+  if (!/^https:\/\//i.test(url)) fail(400, "'url' must be an https URL");
+  let events = WEBHOOK_EVENTS;
+  if (body.events !== undefined) {
+    if (!Array.isArray(body.events) || body.events.some((e) => typeof e !== "string")) {
+      fail(400, "'events' must be an array of strings");
+    }
+    const bad = (body.events as string[]).find((e) => !WEBHOOK_EVENTS.includes(e));
+    if (bad) fail(400, `unknown event '${bad}'. Valid: ${WEBHOOK_EVENTS.join(", ")}`);
+    events = body.events as string[];
+  }
+  const id = webhookId();
+  const now = Date.now();
+  await c.env.DB.prepare(
+    `INSERT INTO webhooks (id, api_key_id, url, events, active, created_at) VALUES (?, ?, ?, ?, 1, ?)`,
+  )
+    .bind(id, c.get("apiKey").id, url, events.join(","), now)
+    .run();
+  return c.json({ id, url, events, active: true, delivery: "retries with exponential backoff (beta)", created_at: now }, 201);
+});
+
+/** GET /webhooks/logs — registered webhooks + delivery logs for the key. */
+webhooks.get("/logs", requireScope("read"), async (c) => {
+  const limit = parseLimit(c.req.query("limit"), 50, 200);
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, url, events, active, created_at FROM webhooks WHERE api_key_id = ? ORDER BY created_at DESC LIMIT ?`,
+  )
+    .bind(c.get("apiKey").id, limit)
+    .all<{ id: string; url: string; events: string; active: number; created_at: number }>();
+  const hooks = (results ?? []).map((w) => ({ ...w, events: w.events.split(","), active: w.active === 1 }));
+  return c.json({ webhooks: hooks, deliveries: [], note: "Event delivery is in beta." });
+});
 
 async function verifyStandardWebhook(
   secret: string,

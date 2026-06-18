@@ -15,6 +15,25 @@ interface StoreBody {
   importance?: unknown;
   ttl_seconds?: unknown;
   tags?: unknown;
+  detect_conflicts?: unknown;
+}
+
+const NEGATION = /\b(not|never|no longer|isn't|doesn't|don't|won't|can't|cancel(?:led|ed)?|stopped|quit)\b/i;
+const ANTONYMS: [string, string][] = [
+  ["vegetarian", "chicken"], ["vegetarian", "beef"], ["vegetarian", "meat"],
+  ["vegan", "meat"], ["vegan", "cheese"], ["likes", "hates"], ["loves", "hates"],
+  ["active", "cancel"], ["subscribed", "unsubscrib"], ["enabled", "disabled"],
+];
+
+/** Fast heuristic contradiction check between two texts. */
+function contradicts(a: string, b: string): boolean {
+  const la = a.toLowerCase();
+  const lb = b.toLowerCase();
+  if (NEGATION.test(la) !== NEGATION.test(lb)) return true;
+  for (const [x, y] of ANTONYMS) {
+    if ((la.includes(x) && lb.includes(y)) || (la.includes(y) && lb.includes(x))) return true;
+  }
+  return false;
 }
 
 /** POST /memory/store — persist a memory and its embedding. */
@@ -80,6 +99,52 @@ memory.post("/store", requireScope("write"), async (c) => {
   // Invalidate cached retrieval results for this scope.
   await invalidateRetrieveCache(c.env, key.id, userId, agentId);
 
+  // Optional contradiction detection against existing memories in scope.
+  let conflict: object | null = null;
+  if (body.detect_conflicts && embedding) {
+    const qv = JSON.parse(embedding) as number[];
+    const { results } = await c.env.DB.prepare(
+      `SELECT id, content, embedding FROM memories
+       WHERE api_key_id = ? AND user_id = ? AND agent_id = ? AND id != ?
+         AND (expires_at IS NULL OR expires_at > ?) AND embedding IS NOT NULL
+       ORDER BY created_at DESC LIMIT 200`,
+    )
+      .bind(key.id, userId, agentId, id, now)
+      .all<{ id: string; content: string; embedding: string }>();
+
+    let best: { id: string; content: string; score: number } | null = null;
+    for (const row of results ?? []) {
+      let score = 0;
+      try {
+        score = cosineSimilarity(qv, JSON.parse(row.embedding) as number[]);
+      } catch {
+        score = 0;
+      }
+      if (score > 0.45 && (!best || score > best.score) && contradicts(content, row.content)) {
+        best = { id: row.id, content: row.content, score };
+      }
+    }
+    if (best) {
+      conflict = {
+        existing_memory_id: best.id,
+        existing_content: best.content,
+        conflict_type: "contradiction",
+        confidence: Number(best.score.toFixed(4)),
+        resolution: "store kept both; link via POST /memory/graph/link or DELETE the stale one",
+      };
+      // Auto-link the contradiction in the graph.
+      c.executionCtx.waitUntil(
+        c.env.DB.prepare(
+          `INSERT INTO memory_links (id, api_key_id, from_id, to_id, relationship, created_at)
+           VALUES (?, ?, ?, ?, 'contradicts', ?)`,
+        )
+          .bind(`lnk_${id.slice(4)}`, key.id, id, best.id, now)
+          .run()
+          .catch(() => {}),
+      );
+    }
+  }
+
   c.header("x-am-tokens", String(tokens));
   return c.json(
     {
@@ -92,6 +157,7 @@ memory.post("/store", requireScope("write"), async (c) => {
       tags: tags ? tags.split(",") : [],
       expires_at: expiresAt,
       embedded: embedding !== null,
+      conflict,
       created_at: now,
     },
     201,

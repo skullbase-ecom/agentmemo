@@ -27,3 +27,15 @@ export function procedureId(): string {
 export function emotionId(): string {
   return `emo_${rand()}`;
 }
+
+export function linkId(): string {
+  return `lnk_${rand()}`;
+}
+
+export function agentRegId(): string {
+  return `agt_${rand()}`;
+}
+
+export function webhookId(): string {
+  return `wh_${rand()}`;
+}

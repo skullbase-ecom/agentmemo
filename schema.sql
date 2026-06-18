@@ -131,6 +131,44 @@ CREATE TABLE IF NOT EXISTS emotional_memories (
 );
 CREATE INDEX IF NOT EXISTS idx_emotional_scope ON emotional_memories (api_key_id, agent_id, user_id);
 
+-- ---------------------------------------------------------------------------
+-- PHASE 2: INTELLIGENCE LAYER
+-- ---------------------------------------------------------------------------
+
+-- Memory graph: typed links between memories.
+CREATE TABLE IF NOT EXISTS memory_links (
+  id           TEXT PRIMARY KEY,            -- lnk_...
+  api_key_id   TEXT NOT NULL,
+  from_id      TEXT NOT NULL,
+  to_id        TEXT NOT NULL,
+  relationship TEXT NOT NULL,               -- contradicts|supports|follows|causes|related_to
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_links_from ON memory_links (api_key_id, from_id);
+CREATE INDEX IF NOT EXISTS idx_links_rel ON memory_links (api_key_id, relationship);
+
+-- Agent identity: agents as first-class citizens under an API key.
+CREATE TABLE IF NOT EXISTS agents (
+  id           TEXT PRIMARY KEY,            -- agt_...
+  api_key_id   TEXT NOT NULL,
+  name         TEXT NOT NULL,
+  description  TEXT,
+  capabilities TEXT,                        -- JSON array
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agents_key ON agents (api_key_id);
+
+-- Registered webhooks.
+CREATE TABLE IF NOT EXISTS webhooks (
+  id          TEXT PRIMARY KEY,             -- wh_...
+  api_key_id  TEXT NOT NULL,
+  url         TEXT NOT NULL,
+  events      TEXT NOT NULL,                -- comma-separated event names
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_webhooks_key ON webhooks (api_key_id);
+
 -- Semantic memory enhancements (importance, TTL, tags) live on `memories`:
 --   ALTER TABLE memories ADD COLUMN importance INTEGER NOT NULL DEFAULT 0;
 --   ALTER TABLE memories ADD COLUMN expires_at INTEGER;

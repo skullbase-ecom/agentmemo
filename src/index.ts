@@ -12,6 +12,14 @@ import episodes from "./routes/episodes";
 import procedures from "./routes/procedures";
 import working from "./routes/working";
 import emotional from "./routes/emotional";
+import graph from "./routes/graph";
+import memmgmt from "./routes/memmgmt";
+import intelligence from "./routes/intelligence";
+import agentsRoutes from "./routes/agents";
+import analytics from "./routes/analytics";
+import usersRoutes from "./routes/users";
+import spaces from "./routes/spaces";
+import templates from "./routes/templates";
 import auth from "./routes/auth";
 import usage from "./routes/usage";
 import signup from "./routes/signup";
@@ -246,23 +254,47 @@ app.get("/health", async (c) => {
 // Admin-gated key minting (uses ADMIN_SECRET, not an API key).
 app.route("/auth", auth);
 
-// Public self-serve signup (free-tier key) and payment webhooks.
+// Public self-serve signup (free-tier key).
 app.route("/signup", signup);
-app.route("/webhooks", webhooks);
 
 // ---- Protected routes ----------------------------------------------------
 // Order: strip headers -> record usage -> authenticate -> rate limit -> quota -> handler.
-app.use("/memory/*", stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerKey, freeTierQuota);
-app.use("/usage", stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerKey);
-app.use("/usage/*", stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerKey);
+const authed = [stripInternalHeaders, trackUsage, apiKeyAuth, rateLimitPerKey] as const;
+app.use("/memory/*", ...authed, freeTierQuota);
+app.use("/usage", ...authed);
+app.use("/usage/*", ...authed);
+app.use("/agents", ...authed);
+app.use("/agents/*", ...authed);
+app.use("/analytics/*", ...authed);
+app.use("/users/*", ...authed);
+app.use("/spaces", ...authed);
+app.use("/spaces/*", ...authed);
+app.use("/templates", ...authed);
+app.use("/templates/*", ...authed);
+app.use("/webhooks/register", ...authed);
+app.use("/webhooks/logs", ...authed);
 
-// Memory-type sub-APIs (Phase 1). All under /memory/* so the protect chain applies.
+// Memory-type sub-APIs (Phase 1) + intelligence/management (Phase 2). All under
+// /memory/* so the protect chain applies.
 app.route("/memory/episodes", episodes);
 app.route("/memory/procedures", procedures);
 app.route("/memory/working", working);
 app.route("/memory/emotional", emotional);
+app.route("/memory/graph", graph);
+app.route("/memory", memmgmt);
+app.route("/memory", intelligence);
 app.route("/memory", memory);
 app.route("/usage", usage);
+
+// Phase 2 — agent identity, analytics, GDPR, spaces, templates.
+app.route("/agents", agentsRoutes);
+app.route("/analytics", analytics);
+app.route("/users", usersRoutes);
+app.route("/spaces", spaces);
+app.route("/templates", templates);
+
+// Webhooks: /register and /logs are authed (use() above); /dodo stays public.
+app.route("/webhooks", webhooks);
 
 // ---- Error handling ------------------------------------------------------
 // Browsers get a dark-theme HTML page; API clients get the JSON error shape.
