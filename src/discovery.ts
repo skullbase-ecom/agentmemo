@@ -217,6 +217,14 @@ export const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${BASE}/pricing</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>${BASE}/signup</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>${BASE}/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>${BASE}/security</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>${BASE}/benchmarks</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>${BASE}/integrations</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>${BASE}/playground</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>${BASE}/manifesto</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>${BASE}/blog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>${BASE}/use-cases</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>${BASE}/sdk</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/changelog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/status</loc><changefreq>always</changefreq><priority>0.5</priority></url>
   <url><loc>${BASE}/observatory</loc><changefreq>always</changefreq><priority>0.6</priority></url>

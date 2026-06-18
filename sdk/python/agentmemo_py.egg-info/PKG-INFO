@@ -1,9 +1,24 @@
+Metadata-Version: 2.4
+Name: agentmemo-py
+Version: 1.0.0
+Summary: Persistent memory for AI agents — store, retrieve, and recall context across sessions.
+Author-email: "Dr. Nadeem Shaikh" <nadeembyit@gmail.com>
+License: Apache-2.0
+Project-URL: Homepage, https://agentmemo.dev
+Project-URL: Documentation, https://agentmemo.dev/docs
+Project-URL: Repository, https://github.com/skullbase-ecom/agentmemo
+Keywords: ai,agent,memory,llm,mcp,semantic-search,agentmemo
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Provides-Extra: async
+Requires-Dist: httpx>=0.24; extra == "async"
+
 # agentmemo
 
 Persistent memory for AI agents. Store, semantically retrieve, and recall context across sessions. Pure standard library (no required dependencies).
 
 ```bash
-pip install agentmemo-py
+pip install agentmemo
 ```
 
 ## Quick start
@@ -41,7 +56,7 @@ ctx = mem.context(user_id="user_123", format="anthropic")["context"]
 - `batch(memories)`
 - `stats(user_id=None)`, `usage()`
 - `MemoryClient.signup(name)` — static, returns a free API key
-- Async: `await mem.async_store(...)`, `await mem.async_search(...)` (requires `pip install agentmemo-py[async]`)
+- Async: `await mem.async_store(...)`, `await mem.async_search(...)` (requires `pip install agentmemo[async]`)
 
 Errors raise `AgentMemoError` with `.status`, `.code`, `.body`.
 

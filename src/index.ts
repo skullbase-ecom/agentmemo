@@ -46,6 +46,17 @@ import { STATUS_HTML, runStatusChecks } from "./status";
 import { OBSERVATORY_HTML, runObservatory } from "./observatory";
 import { CHANGELOG_HTML } from "./changelog";
 import { NOT_FOUND_HTML, ERROR_HTML } from "./error-pages";
+import {
+  SECURITY_HTML,
+  MANIFESTO_HTML,
+  BENCHMARKS_HTML,
+  INTEGRATIONS_HTML,
+  PLAYGROUND_HTML,
+  BLOG_INDEX_HTML,
+  blogArticle,
+  USECASES_INDEX_HTML,
+  useCase,
+} from "./pages";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -58,10 +69,10 @@ app.use(
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:"],
       connectSrc: ["'self'"],
-      fontSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
@@ -120,6 +131,31 @@ app.get("/pricing", (c) => {
 app.get("/changelog", (c) => {
   c.header("cache-control", "public, max-age=3600");
   return c.html(CHANGELOG_HTML);
+});
+
+// Redesigned content pages.
+const htmlRoute = (html: string) => (c: AppContext) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(html);
+};
+app.get("/security", htmlRoute(SECURITY_HTML));
+app.get("/manifesto", htmlRoute(MANIFESTO_HTML));
+app.get("/benchmarks", htmlRoute(BENCHMARKS_HTML));
+app.get("/integrations", htmlRoute(INTEGRATIONS_HTML));
+app.get("/playground", htmlRoute(PLAYGROUND_HTML));
+app.get("/blog", htmlRoute(BLOG_INDEX_HTML));
+app.get("/blog/:slug", (c) => {
+  const html = blogArticle(c.req.param("slug"));
+  if (!html) return c.notFound();
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(html);
+});
+app.get("/use-cases", htmlRoute(USECASES_INDEX_HTML));
+app.get("/use-cases/:slug", (c) => {
+  const html = useCase(c.req.param("slug"));
+  if (!html) return c.notFound();
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(html);
 });
 
 // Live status page (auto-refreshing) + machine-readable JSON.

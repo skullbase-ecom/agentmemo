@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+agentmemo/__init__.py
+agentmemo.egg-info/PKG-INFO
+agentmemo.egg-info/SOURCES.txt
+agentmemo.egg-info/dependency_links.txt
+agentmemo.egg-info/requires.txt
+agentmemo.egg-info/top_level.txt

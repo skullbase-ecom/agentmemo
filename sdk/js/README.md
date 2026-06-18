@@ -3,13 +3,13 @@
 Persistent memory for AI agents. Store, semantically retrieve, and recall context across sessions — at the edge, in milliseconds. Zero dependencies, native `fetch`.
 
 ```bash
-npm install agentmemo
+npm install agentmemo-sdk
 ```
 
 ## Quick start
 
 ```js
-import { AgentMemo } from "agentmemo";
+import { AgentMemo } from "agentmemo-sdk";
 
 // Get a free key (or pass an existing one)
 const { api_key } = await AgentMemo.signup("my-agent");

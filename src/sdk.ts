@@ -6,10 +6,10 @@ const RAW = "https://raw.githubusercontent.com/skullbase-ecom/agentmemo/master/s
 export const SDK_JS = `# AgentMemo — JavaScript / TypeScript SDK
 
 Install:
-  npm install agentmemo
+  npm install agentmemo-sdk
 
 Quickstart:
-  import { AgentMemo } from "agentmemo";
+  import { AgentMemo } from "agentmemo-sdk";
   const { api_key } = await AgentMemo.signup("my-agent");
   const memory = new AgentMemo(api_key);
 
@@ -28,7 +28,7 @@ Docs:        https://agentmemo.dev/docs
 export const SDK_PY = `# AgentMemo — Python SDK
 
 Install:
-  pip install agentmemo
+  pip install agentmemo-py
 
 Quickstart:
   from agentmemo import MemoryClient
@@ -49,8 +49,8 @@ Docs:        https://agentmemo.dev/docs
 
 export const SDK_INDEX = `# AgentMemo SDKs
 
-JavaScript / TypeScript:  npm install agentmemo    ->  https://agentmemo.dev/sdk/js
-Python:                   pip install agentmemo    ->  https://agentmemo.dev/sdk/python
+JavaScript / TypeScript:  npm install agentmemo-sdk    ->  https://agentmemo.dev/sdk/js
+Python:                   pip install agentmemo-py     ->  https://agentmemo.dev/sdk/python
 
 Source: https://github.com/skullbase-ecom/agentmemo (sdk/)
 `;
