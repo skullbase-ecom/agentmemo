@@ -72,6 +72,8 @@ signup.post("/", async (c) => {
         dodo_mcp: "https://mcp.dodopayments.com/sse",
         dodo_knowledge_mcp: "https://knowledge.dodopayments.com/mcp",
         product_id: "pdt_0NhKvw8RSLuiPu2bD2IQH",
+        note: "Include your api_key in Dodo subscription metadata (agentmemo_api_key) for automatic Pro upgrade — no email needed.",
+        subscription_metadata: { agentmemo_api_key: secret },
         docs: "https://agentmemo.dev/docs/agent-payments",
       },
       docs: "https://agentmemo.dev/docs",

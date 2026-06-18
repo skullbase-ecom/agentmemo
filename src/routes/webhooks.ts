@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env, Variables } from "../types";
 import { fail, requireString, parseLimit } from "../lib/http";
 import { webhookId } from "../lib/ids";
+import { sha256Hex } from "../lib/crypto";
 import { requireScope } from "../middleware/auth";
 
 const WEBHOOK_EVENTS = [
@@ -103,11 +104,8 @@ webhooks.post("/dodo", async (c) => {
   }
 
   const type = String(event.type ?? event.event_type ?? "");
+  const apiKey = extractApiKey(event);
   const email = extractEmail(event);
-
-  if (!email) {
-    return c.json({ ok: true, note: "no customer email in payload; nothing to do" });
-  }
 
   const upgrade = /(succeeded|active|completed|paid|renewed)/i.test(type);
   const downgrade = /(cancel|refund|expired|failed|past_due|dispute)/i.test(type);
@@ -116,15 +114,49 @@ webhooks.post("/dodo", async (c) => {
   if (upgrade && !downgrade) tier = "pro";
   else if (downgrade) tier = "free";
 
-  if (tier) {
+  if (!tier) {
+    return c.json({ ok: true, event: type, note: "no tier change for this event" });
+  }
+
+  // Preferred: match by the api_key carried in subscription metadata (works for
+  // emailless agents). The plaintext key is hashed to match the stored key_hash.
+  if (apiKey) {
+    const keyHash = await sha256Hex(apiKey);
+    const res = await c.env.DB.prepare(`UPDATE api_keys SET tier = ? WHERE key_hash = ?`)
+      .bind(tier, keyHash)
+      .run();
+    if ((res.meta?.changes ?? 0) > 0) {
+      return c.json({ ok: true, event: type, matched_by: "metadata.agentmemo_api_key", set_tier: tier, keys_updated: res.meta?.changes ?? 0 });
+    }
+    // metadata key didn't match a known key — fall through to email.
+  }
+
+  // Fallback: match by customer email -> owner.
+  if (email) {
     const res = await c.env.DB.prepare(`UPDATE api_keys SET tier = ? WHERE owner = ?`)
       .bind(tier, email)
       .run();
-    return c.json({ ok: true, event: type, owner: email, set_tier: tier, keys_updated: res.meta?.changes ?? 0 });
+    return c.json({ ok: true, event: type, matched_by: "email", owner: email, set_tier: tier, keys_updated: res.meta?.changes ?? 0 });
   }
 
-  return c.json({ ok: true, event: type, note: "no tier change for this event" });
+  return c.json({ ok: true, event: type, note: "no agentmemo_api_key in metadata and no customer email; nothing to upgrade" });
 });
+
+/** Pull metadata.agentmemo_api_key from common Dodo payload shapes. */
+function extractApiKey(event: Record<string, unknown>): string | null {
+  const data = (event.data ?? event) as Record<string, unknown>;
+  const metas = [
+    data.metadata as Record<string, unknown> | undefined,
+    (data.subscription as Record<string, unknown> | undefined)?.metadata as Record<string, unknown> | undefined,
+    (data.payment as Record<string, unknown> | undefined)?.metadata as Record<string, unknown> | undefined,
+    event.metadata as Record<string, unknown> | undefined,
+  ];
+  for (const m of metas) {
+    const v = m?.agentmemo_api_key;
+    if (typeof v === "string" && v.startsWith("am_sk_")) return v;
+  }
+  return null;
+}
 
 function extractEmail(event: Record<string, unknown>): string | null {
   const data = (event.data ?? event) as Record<string, unknown>;
