@@ -2,8 +2,11 @@ import { Hono } from "hono";
 import type { Env, Variables, MemoryRow } from "../types";
 import { fail, requireString, parseLimit } from "../lib/http";
 import { memoryId } from "../lib/ids";
+import { sha256Hex } from "../lib/crypto";
 import { embed, cosineSimilarity, approxTokens } from "../lib/embeddings";
 import { requireScope } from "../middleware/auth";
+import { classifyOne } from "../lib/classify";
+import { getAgentTrust, recordWrite, audit } from "../lib/security";
 
 const memory = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -16,6 +19,10 @@ interface StoreBody {
   ttl_seconds?: unknown;
   tags?: unknown;
   detect_conflicts?: unknown;
+  namespace?: unknown;
+  outcome?: unknown;
+  valid_from?: unknown;
+  valid_until?: unknown;
 }
 
 const NEGATION = /\b(not|never|no longer|isn't|doesn't|don't|won't|can't|cancel(?:led|ed)?|stopped|quit)\b/i;
@@ -73,9 +80,49 @@ memory.post("/store", requireScope("write"), async (c) => {
     tags = (body.tags as string[]).map((t) => t.trim()).filter(Boolean).join(",") || null;
   }
 
+  const namespace = body.namespace == null ? "default" : requireString(body.namespace, "namespace", 128);
+  let outcome = "unknown";
+  if (body.outcome !== undefined) {
+    outcome = String(body.outcome);
+    if (!["success", "failure", "unknown"].includes(outcome)) {
+      fail(400, "'outcome' must be success, failure, or unknown");
+    }
+  }
+  const validFrom = body.valid_from == null ? null : Number(body.valid_from) || null;
+  const validUntil = body.valid_until == null ? null : Number(body.valid_until) || null;
+
   const key = c.get("apiKey");
   const now = Date.now();
   const id = memoryId();
+
+  // OWASP ASI06 — block writes from low-trust keys.
+  const trust = await getAgentTrust(c.env, key.id);
+  if (trust.blocked || trust.trust_score < 0.3) {
+    return c.json(
+      {
+        error: "trust_score_too_low",
+        code: "trust_score_too_low",
+        docs: "https://agentmemo.dev/docs",
+        trust_score: Number(trust.trust_score.toFixed(2)),
+        reason: "suspicious write pattern detected",
+      },
+      403,
+    );
+  }
+
+  // Content hash for integrity + dedup. Skip if an identical memory exists in scope.
+  const contentHash = await sha256Hex(content);
+  const dup = await c.env.DB.prepare(
+    `SELECT id FROM memories WHERE api_key_id = ? AND content_hash = ? AND user_id = ? AND agent_id = ? LIMIT 1`,
+  )
+    .bind(key.id, contentHash, userId, agentId)
+    .first<{ id: string }>();
+  if (dup) {
+    return c.json({ status: "duplicate", id: dup.id, deduplicated: true, content_hash: contentHash });
+  }
+
+  const category = classifyOne(content);
+  const protocol = (c.req.header("x-mcp") ? "MCP" : "REST");
 
   // Generate embedding; degrade gracefully if Workers AI is unavailable so a
   // store still succeeds (the memory just won't rank semantically until re-indexed).
@@ -90,11 +137,23 @@ memory.post("/store", requireScope("write"), async (c) => {
   }
 
   await c.env.DB.prepare(
-    `INSERT INTO memories (id, api_key_id, user_id, agent_id, content, metadata, embedding, importance, expires_at, tags, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO memories (id, api_key_id, user_id, agent_id, content, metadata, embedding, importance,
+       expires_at, tags, namespace, outcome, valid_from, valid_until, category, trust_score, content_hash,
+       written_by, write_protocol, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
-    .bind(id, key.id, userId, agentId, content, metadata, embedding, importance, expiresAt, tags, now, now)
+    .bind(
+      id, key.id, userId, agentId, content, metadata, embedding, importance,
+      expiresAt, tags, namespace, outcome, validFrom, validUntil, category, trust.trust_score, contentHash,
+      key.id, protocol, now, now,
+    )
     .run();
+
+  // Audit + trust accounting (fire-and-forget).
+  c.executionCtx.waitUntil(recordWrite(c.env, key.id, now));
+  c.executionCtx.waitUntil(
+    audit(c.env, { memory_id: id, action: "store", api_key_id: key.id, trust_score: trust.trust_score, outcome, now }),
+  );
 
   // Invalidate cached retrieval results for this scope.
   await invalidateRetrieveCache(c.env, key.id, userId, agentId);
@@ -149,14 +208,20 @@ memory.post("/store", requireScope("write"), async (c) => {
   return c.json(
     {
       id,
+      status: embedding ? "stored" : "queued",
       user_id: userId,
       agent_id: agentId,
       content,
       metadata: JSON.parse(metadata),
+      namespace,
       importance,
+      outcome,
+      category,
+      trust_score: Number(trust.trust_score.toFixed(2)),
       tags: tags ? tags.split(",") : [],
       expires_at: expiresAt,
       embedded: embedding !== null,
+      contradiction: conflict,
       conflict,
       created_at: now,
     },
@@ -171,6 +236,11 @@ memory.get("/retrieve", requireScope("read"), async (c) => {
   const agentId = c.req.query("agent_id"); // optional scope narrowing
   const limit = parseLimit(c.req.query("limit"), 10, 100);
   const minScore = Number.parseFloat(c.req.query("min_score") ?? "0") || 0;
+  const namespace = c.req.query("namespace");
+  const outcomeFilter = c.req.query("outcome");
+  const minImportance = Number.parseInt(c.req.query("min_importance") ?? "", 10);
+  const tagFilter = (c.req.query("tags") ?? "").split(",").map((t) => t.trim()).filter(Boolean);
+  const includeExpired = c.req.query("include_expired") === "true";
 
   const key = c.get("apiKey");
   const candidateLimit = Math.max(
@@ -181,7 +251,7 @@ memory.get("/retrieve", requireScope("read"), async (c) => {
   // Cache key derived from the full query shape, namespaced by a per-scope
   // version that store/forget bumps — so writes immediately invalidate reads.
   const version = await scopeVersion(c.env, key.id, userId);
-  const cacheKey = `retrieve:${key.id}:${userId}:${agentId ?? "*"}:${version}:${limit}:${minScore}:${query}`;
+  const cacheKey = `retrieve:${key.id}:${userId}:${agentId ?? "*"}:${version}:${limit}:${minScore}:${namespace ?? ""}:${outcomeFilter ?? ""}:${minImportance || 0}:${tagFilter.join("+")}:${includeExpired}:${query}`;
   const cached = await c.env.CACHE.get(cacheKey, "json");
   if (cached) {
     c.header("x-am-cache", "HIT");
@@ -199,55 +269,79 @@ memory.get("/retrieve", requireScope("read"), async (c) => {
     console.error("embedding failed on retrieve", String(err));
   }
 
-  // Pull candidate rows for the scope, skipping expired (TTL) memories.
+  // Pull candidate rows for the scope with all filters applied in SQL.
   const nowTs = Date.now();
-  const where = agentId
-    ? `api_key_id = ? AND user_id = ? AND agent_id = ? AND (expires_at IS NULL OR expires_at > ?)`
-    : `api_key_id = ? AND user_id = ? AND (expires_at IS NULL OR expires_at > ?)`;
-  const binds = agentId ? [key.id, userId, agentId, nowTs] : [key.id, userId, nowTs];
+  const conds = ["api_key_id = ?", "user_id = ?"];
+  const binds: unknown[] = [key.id, userId];
+  if (agentId) { conds.push("agent_id = ?"); binds.push(agentId); }
+  if (namespace) { conds.push("namespace = ?"); binds.push(namespace); }
+  if (outcomeFilter) { conds.push("outcome = ?"); binds.push(outcomeFilter); }
+  if (Number.isFinite(minImportance)) { conds.push("importance >= ?"); binds.push(minImportance); }
+  if (!includeExpired) { conds.push("(expires_at IS NULL OR expires_at > ?)"); binds.push(nowTs); }
+  // Temporal validity: only currently-valid facts.
+  conds.push("(valid_from IS NULL OR valid_from <= ?)"); binds.push(nowTs);
+  conds.push("(valid_until IS NULL OR valid_until > ?)"); binds.push(nowTs);
 
   const { results } = await c.env.DB.prepare(
-    `SELECT id, user_id, agent_id, content, metadata, embedding, importance, tags, created_at, updated_at
-     FROM memories WHERE ${where}
+    `SELECT id, user_id, agent_id, content, metadata, embedding, importance, tags,
+            outcome_score, namespace, outcome, created_at, updated_at
+     FROM memories WHERE ${conds.join(" AND ")}
      ORDER BY created_at DESC LIMIT ?`,
   )
     .bind(...binds, candidateLimit)
     .all<MemoryRow>();
 
-  // Rank by cosine similarity when we have a query embedding; otherwise fall
-  // back to recency (already ordered by created_at DESC).
+  // Composite scoring: semantic (0.5) + outcome (0.25) + importance (0.15) + recency (0.10).
   const ranked = (results ?? [])
+    .filter((row) => (tagFilter.length ? tagFilter.some((t) => (row.tags ?? "").split(",").includes(t)) : true))
     .map((row) => {
-      let score = 0;
+      let semantic = 0;
       if (queryVec && row.embedding) {
-        try {
-          score = cosineSimilarity(queryVec, JSON.parse(row.embedding) as number[]);
-        } catch {
-          score = 0;
-        }
+        try { semantic = cosineSimilarity(queryVec, JSON.parse(row.embedding) as number[]); } catch { semantic = 0; }
       }
-      return { row, score };
+      const ageDays = Math.max(0, (nowTs - row.created_at) / 86_400_000);
+      const recency = Math.exp(-ageDays / 30);
+      const composite = queryVec
+        ? semantic * 0.5 + (row.outcome_score ?? 0) * 0.25 + ((row.importance ?? 0) / 10) * 0.15 + recency * 0.1
+        : recency;
+      return { row, semantic, composite };
     })
-    .filter((r) => (queryVec ? r.score >= minScore : true))
-    .sort((a, b) => b.score - a.score)
+    .filter((r) => (queryVec ? r.semantic >= minScore : true))
+    .sort((a, b) => b.composite - a.composite)
     .slice(0, limit)
-    .map(({ row, score }) => ({
+    .map(({ row, semantic, composite }) => ({
       id: row.id,
       user_id: row.user_id,
       agent_id: row.agent_id,
       content: row.content,
       metadata: safeJson(row.metadata),
+      namespace: row.namespace ?? "default",
       importance: row.importance ?? 0,
+      outcome: row.outcome ?? "unknown",
       tags: row.tags ? row.tags.split(",") : [],
-      score: queryVec ? Number(score.toFixed(6)) : null,
+      score: queryVec ? Number(semantic.toFixed(6)) : null,
+      final_score: queryVec ? Number(composite.toFixed(6)) : null,
       created_at: row.created_at,
     }));
+
+  // Track retrieval (count + last_retrieved_at) for returned hits.
+  if (ranked.length) {
+    const ids = ranked.map((r) => r.id);
+    c.executionCtx.waitUntil(
+      c.env.DB.prepare(
+        `UPDATE memories SET retrieval_count = retrieval_count + 1, last_retrieved_at = ?
+         WHERE id IN (${ids.map(() => "?").join(",")})`,
+      ).bind(nowTs, ...ids).run().catch(() => {}),
+    );
+  }
 
   const payload = {
     query,
     user_id: userId,
     agent_id: agentId ?? null,
+    namespace: namespace ?? null,
     semantic: queryVec !== null,
+    scoring: "composite (semantic 0.5 + outcome 0.25 + importance 0.15 + recency 0.1)",
     count: ranked.length,
     results: ranked,
   };

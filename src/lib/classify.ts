@@ -32,6 +32,11 @@ const KEYWORDS: Record<Category, string[]> = {
   other: [],
 };
 
+/** Fast single-item classification (heuristic, no AI) for the store hot path. */
+export function classifyOne(content: string): string {
+  return heuristic(content);
+}
+
 function heuristic(content: string): Category {
   const t = content.toLowerCase();
   for (const cat of CATEGORIES) {

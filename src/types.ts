@@ -44,6 +44,10 @@ export interface MemoryRow {
   importance: number;
   expires_at: number | null;
   tags: string | null;
+  namespace?: string;
+  outcome?: string;
+  outcome_score?: number;
+  retrieval_count?: number;
   created_at: number;
   updated_at: number;
 }

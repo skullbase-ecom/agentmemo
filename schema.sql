@@ -42,6 +42,19 @@ CREATE TABLE IF NOT EXISTS memories (
   importance  INTEGER NOT NULL DEFAULT 0,    -- 0..10, boosts ranking / compression priority
   expires_at  INTEGER,                       -- unix ms; memory ignored after this
   tags        TEXT,                          -- comma-separated tags
+  namespace        TEXT NOT NULL DEFAULT 'default',
+  outcome          TEXT NOT NULL DEFAULT 'unknown', -- success|failure|unknown
+  outcome_score    REAL NOT NULL DEFAULT 0,         -- 0..1, EMA from feedback
+  retrieval_count  INTEGER NOT NULL DEFAULT 0,
+  last_retrieved_at INTEGER,
+  verified_at      INTEGER,
+  valid_from       INTEGER,                  -- temporal validity start
+  valid_until      INTEGER,                  -- temporal validity end (null = current)
+  category         TEXT,                     -- AI-classified
+  trust_score      REAL NOT NULL DEFAULT 1.0,
+  content_hash     TEXT,                     -- sha256 of content (integrity + dedup)
+  written_by       TEXT,                     -- api_key_id that wrote it
+  write_protocol   TEXT,                     -- REST|MCP|SDK
   created_at  INTEGER NOT NULL,              -- unix ms
   updated_at  INTEGER NOT NULL,
   FOREIGN KEY (api_key_id) REFERENCES api_keys (id) ON DELETE CASCADE
@@ -168,6 +181,35 @@ CREATE TABLE IF NOT EXISTS webhooks (
   created_at  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_webhooks_key ON webhooks (api_key_id);
+
+-- Section 1 memory indexes.
+CREATE INDEX IF NOT EXISTS idx_memories_ns ON memories (namespace, user_id, agent_id);
+CREATE INDEX IF NOT EXISTS idx_memories_expires ON memories (expires_at);
+CREATE INDEX IF NOT EXISTS idx_memories_valid ON memories (valid_from, valid_until);
+CREATE INDEX IF NOT EXISTS idx_memories_hash ON memories (api_key_id, content_hash);
+
+-- Audit log: every memory operation.
+CREATE TABLE IF NOT EXISTS memory_audit (
+  id          TEXT PRIMARY KEY,
+  memory_id   TEXT,
+  action      TEXT NOT NULL,                 -- store|retrieve|forget|verify|compress
+  api_key_id  TEXT NOT NULL,
+  trust_score REAL,
+  timestamp   INTEGER NOT NULL,
+  ip_hash     TEXT,
+  outcome     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_audit_key_time ON memory_audit (api_key_id, timestamp);
+
+-- Per-key trust score (OWASP ASI06 poisoning protection).
+CREATE TABLE IF NOT EXISTS agent_trust (
+  api_key_id    TEXT PRIMARY KEY,
+  trust_score   REAL NOT NULL DEFAULT 1.0,
+  total_writes  INTEGER NOT NULL DEFAULT 0,
+  flagged_writes INTEGER NOT NULL DEFAULT 0,
+  last_activity INTEGER,
+  blocked       INTEGER NOT NULL DEFAULT 0
+);
 
 -- Semantic memory enhancements (importance, TTL, tags) live on `memories`:
 --   ALTER TABLE memories ADD COLUMN importance INTEGER NOT NULL DEFAULT 0;
