@@ -26,3 +26,6 @@ sdk/python/*.egg-info/
 sdk/python/dist/
 sdk/python/build/
 sdk/js/node_modules/
+
+# large source photo (embedded as base64 in src/founder-image.ts)
+public/

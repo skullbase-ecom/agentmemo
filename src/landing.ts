@@ -35,15 +35,13 @@ table.cmp td.am{color:#ffffff;font-weight:700}
 table.cmp .y{color:#22c55e;font-weight:700;font-size:1.1rem}
 table.cmp .n{color:#ef4444;font-weight:700;font-size:1.1rem}
 /* discovery bar */
-.discovery-bar{text-align:center;padding:24px 0 8px;border-top:1px solid #1f1f1f;margin-top:24px}
+.discovery-bar{text-align:center;padding:24px 0 8px;margin-top:24px}
 .discovery-label{color:#404040;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
 .discovery-names{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
-.dname{color:#737373;font-size:.95rem;font-weight:500;letter-spacing:.02em;opacity:0;animation:fadeIn .5s ease forwards;animation-delay:calc(var(--i) * 400ms + 800ms);transition:color .3s}
+.dname{color:#737373;font-size:.95rem;font-weight:500;letter-spacing:.02em;opacity:0;animation:fadeInUp .6s ease forwards;animation-delay:calc(var(--i) * 400ms + 1200ms);transition:color .3s}
 .dname:hover{color:#8b5cf6}
-.dsep{color:#2a2a2a;opacity:0;animation:fadeIn .5s ease forwards;animation-delay:calc(var(--i,0) * 400ms + 1000ms)}
-@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{color:#737373}50%{color:#8b5cf6}}
-.dname.pulsed{animation:pulse 2s ease 3s 2}
+.dsep{color:#2a2a2a;opacity:0;animation:fadeInUp .6s ease forwards;animation-delay:calc(var(--i,0) * 400ms + 1400ms)}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .tabs{display:flex;gap:6px;margin-bottom:14px}
 .tab{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-2);font-size:13px;cursor:pointer}
 .tab.active{border-color:var(--accent);color:var(--text)}
@@ -87,8 +85,6 @@ const body = `${STYLE}
     </div>
   </div>
 </header>
-
-<div class="proof wrap">Discovered by ClaudeBot · GPTBot · Googlebot · Bingbot · Applebot on day one</div>
 
 <section class="section" id="how"><div class="wrap">
   <div class="sec-title"><span class="eyebrow">How it works</span><h2>Simple by design.</h2></div>
@@ -204,8 +200,6 @@ document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){
   ['curl','js','py'].forEach(function(k){document.getElementById('cb-'+k).style.display=k===t.dataset.t?'block':'none'});
   document.getElementById('cfn').textContent={curl:'store.sh',js:'agent.js',py:'agent.py'}[t.dataset.t];
 }});
-// discovery pulse after names appear
-setTimeout(function(){document.querySelectorAll('.dname').forEach(function(el){el.classList.add('pulsed')})},3000);
 // live metrics
 (async function(){try{
   var o=await (await fetch('/observatory.json')).json();

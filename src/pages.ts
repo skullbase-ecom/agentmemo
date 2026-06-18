@@ -66,7 +66,7 @@ export const MANIFESTO_HTML = shell({
     <li>Full data portability, forever.</li>
     <li>Honest benchmarks.</li>
   </ul>
-  <p style="margin-top:40px">Built in Nanded, Maharashtra, India 🇮🇳 — for the world.</p>
+  <p style="margin-top:40px">Built in India 🇮🇳 — for the world.</p>
 </div></section>`,
 });
 

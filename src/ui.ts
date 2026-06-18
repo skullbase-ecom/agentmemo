@@ -68,11 +68,14 @@ pre.code{padding:18px;overflow-x:auto;font-family:var(--mono);font-size:13px;lin
 }`;
 
 const NAV_LINKS = [
+  ["/", "Home"],
   ["/docs", "Docs"],
   ["/pricing", "Pricing"],
   ["/benchmarks", "Benchmarks"],
   ["/status", "Status"],
   ["/observatory", "Observatory"],
+  ["/blog", "Blog"],
+  ["/about", "About"],
 ];
 
 export function nav(): string {
@@ -97,7 +100,7 @@ export function footer(): string {
     <div><h4>Security</h4><a href="/security">Security</a><a href="/security#audit">Audit Trail</a><a href="/security#owasp">OWASP ASI06</a><a href="/security#gdpr">GDPR</a></div>
     <div><h4>Discover</h4><a href="/auth.md">auth.md</a><a href="/llms.txt">llms.txt</a><a href="/agent-card.json">agent-card.json</a><a href="/humans.txt">humans.txt</a><a href="/manifesto">Manifesto</a></div>
   </div>
-  <div class="bottom">© 2026 AgentMemo · Built by Dr. Nadeem Shaikh · Nanded, India 🇮🇳</div>
+  <div class="bottom">© 2026 AgentMemo · Built by Dr. Nadeem Shaikh · India 🇮🇳</div>
 </div></footer>`;
 }
 

@@ -7,7 +7,7 @@ const STYLE = `<style>
 .ab-hero h1{font-size:clamp(2.2rem,5vw,3.4rem);font-weight:800;letter-spacing:-.03em}
 .ab-hero p{color:var(--text-2);margin-top:14px;font-size:1.1rem}
 .founder{margin:56px 0 8px}
-.avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #8b5cf6;box-shadow:0 0 20px rgba(139,92,246,.3);background:#1a1a1a;margin:0 auto 18px;display:block}
+.avatar{width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:center top;border:3px solid #8b5cf6;box-shadow:0 0 40px rgba(139,92,246,.4);background:#1a1a1a;margin:0 auto 24px;display:block}
 .founder .name{font-size:1.8rem;font-weight:800;color:#f5f5f5}
 .founder .title{color:var(--text-2);margin-top:4px}
 .founder .loc{color:var(--text-muted);font-size:.9rem;margin-top:4px}

@@ -125,4 +125,4 @@ Apache-2.0.
 
 ## Built by
 
-**Dr. Nadeem Shaikh** — Nanded, Maharashtra, India 🇮🇳. For every AI agent on earth.
+**Dr. Nadeem Shaikh** — India 🇮🇳. For every AI agent on earth.
