@@ -86,6 +86,12 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
 User-agent: Applebot-Extended
 Allow: /
 
@@ -103,6 +109,8 @@ export const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${BASE}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
   <url><loc>${BASE}/docs</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${BASE}/pricing</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>${BASE}/signup</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>${BASE}/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/auth.md</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>${BASE}/llms.txt</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>

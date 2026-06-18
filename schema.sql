@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS api_keys (
   name          TEXT NOT NULL,               -- human label for the key
   owner         TEXT,                        -- developer email / identifier
   scopes        TEXT NOT NULL DEFAULT 'read,write',
+  tier          TEXT NOT NULL DEFAULT 'free', -- 'free' | 'pro'
+  source        TEXT NOT NULL DEFAULT 'admin', -- 'admin' | 'self-serve'
+  monthly_usage    INTEGER NOT NULL DEFAULT 0,  -- billable operations this period
+  usage_reset_date INTEGER,                     -- unix ms when monthly_usage resets
   rate_limit    INTEGER NOT NULL DEFAULT 0,  -- 0 = unlimited (informational)
   revoked       INTEGER NOT NULL DEFAULT 0,  -- 0/1
   created_at    INTEGER NOT NULL,            -- unix ms
@@ -20,6 +24,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys (key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_keys_owner ON api_keys (owner);
 
 -- ---------------------------------------------------------------------------
 -- Stored agent memories. Each memory is scoped to (api_key, user, agent).

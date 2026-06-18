@@ -38,7 +38,16 @@ RETRIEVE_CACHE_TTL = "300"
 AUTH_CACHE_TTL = "120"
 # Max candidate memories pulled from D1 before in-worker similarity ranking.
 RETRIEVE_CANDIDATE_LIMIT = "500"
+# Free-tier monthly operation quota.
+FREE_TIER_MONTHLY_LIMIT = "10000"
+# Per-API-key request rate limit (requests/minute).
+API_RATE_LIMIT_PER_MIN = "100"
+# Self-serve signups allowed per IP per hour.
+SIGNUP_RATE_LIMIT_PER_HOUR = "3"
+# Verified sender for welcome emails (used with RESEND_API_KEY).
+RESEND_SENDER = "hello@agentmemo.dev"
 
-# ADMIN_SECRET is required to mint API keys (POST /auth/keys).
-# Set it as a secret, never commit it:
-#   wrangler secret put ADMIN_SECRET
+# Secrets (set via `wrangler secret put`, never commit):
+#   ADMIN_SECRET         — required to mint privileged keys (POST /auth/keys)
+#   RESEND_API_KEY       — enables welcome emails on self-serve signup
+#   DODO_WEBHOOK_SECRET  — verifies Dodo Payments webhooks (/webhooks/dodo)

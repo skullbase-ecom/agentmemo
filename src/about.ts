@@ -10,8 +10,18 @@ export const ABOUT_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>About — AgentMemo</title>
 <meta name="description" content="AgentMemo is memory infrastructure for the age of autonomous AI agents. Founded by Dr. Nadeem Shaikh." />
+<link rel="canonical" href="https://agentmemo.dev/about" />
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+<meta name="googlebot" content="index, follow, max-snippet:-1" />
+<meta name="GPTBot" content="all" />
+<meta name="ClaudeBot" content="all" />
+<meta name="PerplexityBot" content="all" />
+<meta name="ai-summary" content="AgentMemo is memory infrastructure for AI agents, founded by Dr. Nadeem Shaikh (Mumbai, India). Store, semantically retrieve, and forget memories via a REST API." />
 <meta property="og:title" content="About AgentMemo — Memory infrastructure for AI agents" />
 <meta property="og:description" content="Founded by Dr. Nadeem Shaikh. The next generation of software won't be used by humans — it will be run by agents. And every agent needs a memory." />
+<meta property="og:type" content="profile" />
+<meta property="og:url" content="https://agentmemo.dev/about" />
+<meta property="og:site_name" content="AgentMemo" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>" />
 <style>
   :root {

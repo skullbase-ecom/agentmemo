@@ -1,7 +1,10 @@
 import { HTTPException } from "hono/http-exception";
 
 /** Throw a 4xx with a structured JSON body. */
-export function fail(status: 400 | 401 | 403 | 404 | 409 | 429, message: string): never {
+export function fail(
+  status: 400 | 401 | 402 | 403 | 404 | 409 | 429,
+  message: string,
+): never {
   throw new HTTPException(status, {
     res: new Response(JSON.stringify({ error: { status, message } }), {
       status,

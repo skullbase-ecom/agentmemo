@@ -137,6 +137,9 @@ export const DOCS_HTML = `<!DOCTYPE html>
     <a href="#forget">Forget memories</a>
     <div class="group">Account</div>
     <a href="#usage">Usage</a>
+    <div class="group">Integrations</div>
+    <a href="#signup">Get a key</a>
+    <a href="#mcp">MCP server</a>
   </aside>
 
   <main>
@@ -312,13 +315,49 @@ export const DOCS_HTML = `<!DOCTYPE html>
     <div class="code-window">
       <div class="code-bar"><span class="lbl">200 OK · application/json</span></div>
 <pre><code>{
-  <span class="tok-p">"totals"</span>: { <span class="tok-p">"requests"</span>: <span class="tok-m">128</span>, <span class="tok-p">"tokens"</span>: <span class="tok-m">3940</span>, <span class="tok-p">"errors"</span>: <span class="tok-m">2</span>, <span class="tok-p">"avg_latency_ms"</span>: <span class="tok-m">41</span> },
-  <span class="tok-p">"by_route"</span>: [ { <span class="tok-p">"route"</span>: <span class="tok-s">"POST /memory/store"</span>, <span class="tok-p">"requests"</span>: <span class="tok-m">90</span> } ],
-  <span class="tok-p">"daily"</span>: [ { <span class="tok-p">"day"</span>: <span class="tok-s">"2026-06-18"</span>, <span class="tok-p">"requests"</span>: <span class="tok-m">128</span> } ]
+  <span class="tok-p">"tier"</span>: <span class="tok-s">"free"</span>,
+  <span class="tok-p">"used"</span>: <span class="tok-m">128</span>,
+  <span class="tok-p">"limit"</span>: <span class="tok-m">10000</span>,
+  <span class="tok-p">"remaining"</span>: <span class="tok-m">9872</span>,
+  <span class="tok-p">"reset_date"</span>: <span class="tok-m">1782864000000</span>,
+  <span class="tok-p">"totals"</span>: { <span class="tok-p">"requests"</span>: <span class="tok-m">128</span>, <span class="tok-p">"tokens"</span>: <span class="tok-m">3940</span>, <span class="tok-p">"avg_latency_ms"</span>: <span class="tok-m">41</span> },
+  <span class="tok-p">"by_route"</span>: [ { <span class="tok-p">"route"</span>: <span class="tok-s">"POST /memory/store"</span>, <span class="tok-p">"requests"</span>: <span class="tok-m">90</span> } ]
+}</code></pre>
+    </div>
+    <p>Free tier allows <b>10,000 operations/month</b>; over the limit, memory calls return <code>429 { "error": "free tier limit reached" }</code>. <a href="/pricing">Upgrade to Pro</a> for unlimited.</p>
+
+    <h2 id="signup">Get an API key</h2>
+    <p>Self-serve, no approval needed. <a href="/signup">Use the signup page</a>, or register programmatically — agents can call this directly:</p>
+    <div class="code-window">
+      <div class="code-bar"><span class="lbl">cURL</span></div>
+<pre><code><span class="tok-f">curl</span> -X POST <span class="tok-m">https://agentmemo.dev/signup</span> \\
+  -H <span class="tok-s">"Content-Type: application/json"</span> \\
+  -d <span class="tok-s">'{ "name": "My Agent", "email": "you@example.com" }'</span>
+<span class="tok-c"># → { "key": "am_sk_...", "tier": "free", "limits": { "operations_per_month": 10000 } }</span></code></pre>
+    </div>
+
+    <h2 id="mcp">MCP server</h2>
+    <p>AgentMemo is a native <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server, so MCP-capable clients (Claude, Cursor, and others) can use it as a tool. Point your client at the endpoint and authenticate with your API key.</p>
+    <table>
+      <tr><th>Field</th><th>Value</th></tr>
+      <tr><td>Endpoint</td><td><code>https://agentmemo.dev/mcp</code> (Streamable HTTP)</td></tr>
+      <tr><td>Manifest</td><td><code>https://agentmemo.dev/mcp.json</code></td></tr>
+      <tr><td>Auth</td><td><code>Authorization: Bearer am_sk_...</code></td></tr>
+      <tr><td>Tools</td><td><code>store_memory</code>, <code>retrieve_memory</code>, <code>forget_memory</code>, <code>get_usage</code></td></tr>
+    </table>
+    <div class="code-window">
+      <div class="code-bar"><span class="lbl">~/.cursor/mcp.json (example)</span></div>
+<pre><code>{
+  <span class="tok-p">"mcpServers"</span>: {
+    <span class="tok-p">"agentmemo"</span>: {
+      <span class="tok-p">"url"</span>: <span class="tok-s">"https://agentmemo.dev/mcp"</span>,
+      <span class="tok-p">"headers"</span>: { <span class="tok-p">"Authorization"</span>: <span class="tok-s">"Bearer am_sk_your_key"</span> }
+    }
+  }
 }</code></pre>
     </div>
 
-    <footer>© 2026 AgentMemo · <a href="/">Home</a> · <a href="/docs">Docs</a> · <a href="/about">About</a></footer>
+    <footer>© 2026 AgentMemo · <a href="/">Home</a> · <a href="/docs">Docs</a> · <a href="/pricing">Pricing</a> · <a href="/about">About</a></footer>
   </main>
 </div>
 </body>

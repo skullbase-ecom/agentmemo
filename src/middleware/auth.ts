@@ -31,10 +31,17 @@ export const apiKeyAuth: MiddlewareHandler<{ Bindings: Env; Variables: Variables
     record = cached as CachedKey;
   } else {
     const row = await c.env.DB.prepare(
-      `SELECT id, name, owner, scopes, revoked FROM api_keys WHERE key_hash = ?`,
+      `SELECT id, name, owner, scopes, tier, revoked FROM api_keys WHERE key_hash = ?`,
     )
       .bind(hash)
-      .first<{ id: string; name: string; owner: string | null; scopes: string; revoked: number }>();
+      .first<{
+        id: string;
+        name: string;
+        owner: string | null;
+        scopes: string;
+        tier: string;
+        revoked: number;
+      }>();
 
     if (row) {
       record = {
@@ -42,6 +49,7 @@ export const apiKeyAuth: MiddlewareHandler<{ Bindings: Env; Variables: Variables
         name: row.name,
         owner: row.owner,
         scopes: row.scopes.split(",").map((s) => s.trim()).filter(Boolean),
+        tier: row.tier ?? "free",
         revoked: row.revoked === 1,
       };
       const ttl = Math.max(60, Number.parseInt(c.env.AUTH_CACHE_TTL, 10) || 120);
@@ -57,6 +65,7 @@ export const apiKeyAuth: MiddlewareHandler<{ Bindings: Env; Variables: Variables
     name: record!.name,
     owner: record!.owner,
     scopes: record!.scopes,
+    tier: record!.tier ?? "free",
   });
 
   // Best-effort last-used timestamp; never blocks the request.

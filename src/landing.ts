@@ -340,14 +340,47 @@ export const LANDING_HTML = `<!DOCTYPE html>
   <div class="wrap">
     <div class="final">
       <h2>Ship agents that <span class="accent-text">remember</span>.</h2>
-      <p>Grab an API key and store your first memory in under a minute.</p>
-      <div class="cta-row" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
-        <a class="btn btn-primary btn-lg" href="mailto:nadeembyit@gmail.com?subject=AgentMemo%20API%20Key%20Request&body=Hi%2C%20I%27d%20like%20an%20AgentMemo%20API%20key.%20My%20use%20case%3A%20">Request your API key</a>
-        <a class="btn btn-ghost btn-lg" href="/docs">Read the docs</a>
+      <p>Create a free API key and store your first memory in under a minute. 10,000 operations/month, no credit card.</p>
+
+      <form id="signupForm" style="max-width:380px;margin:8px auto 0;text-align:left;">
+        <div class="su-err" id="suErr" style="display:none;color:#ff6b81;font-size:14px;margin-bottom:12px;"></div>
+        <input id="suName" type="text" placeholder="Your name" required maxlength="200"
+          style="width:100%;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;margin-bottom:12px;outline:none;" />
+        <input id="suEmail" type="email" placeholder="you@example.com" required maxlength="256"
+          style="width:100%;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;margin-bottom:14px;outline:none;" />
+        <button class="btn btn-primary btn-lg" type="submit" id="suBtn" style="width:100%;justify-content:center;">Get my free API key</button>
+      </form>
+
+      <div id="suResult" style="display:none;max-width:380px;margin:8px auto 0;text-align:left;">
+        <p style="color:var(--muted);font-size:14px;margin-bottom:8px;"><span style="color:var(--green);font-weight:600;">✓</span> Your API key — copy it now, it's shown only once:</p>
+        <div id="suKey" style="background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:13px;font-family:monospace;font-size:13px;color:var(--green);word-break:break-all;"></div>
+        <button class="btn btn-ghost" id="suCopy" style="margin-top:10px;">Copy key</button>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:14px;">Next: <a class="accent-text" href="/docs">read the docs</a> and call <code style="font-family:monospace;">POST /memory/store</code>.</p>
       </div>
+
+      <p style="margin-top:16px;font-size:13px;"><a class="link" href="/docs" style="color:var(--muted);">Prefer to read the docs first? →</a></p>
     </div>
   </div>
 </section>
+
+<script>
+  (function(){
+    var form=document.getElementById('signupForm'),err=document.getElementById('suErr'),btn=document.getElementById('suBtn');
+    form.addEventListener('submit',async function(e){
+      e.preventDefault(); err.style.display='none'; btn.disabled=true; btn.textContent='Creating…';
+      try{
+        var res=await fetch('/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('suName').value.trim(),email:document.getElementById('suEmail').value.trim()})});
+        var data=await res.json();
+        if(!res.ok) throw new Error((data&&data.error&&(data.error.message||data.error))||'Signup failed');
+        document.getElementById('suKey').textContent=data.key;
+        form.style.display='none'; document.getElementById('suResult').style.display='block';
+      }catch(ex){ err.textContent=ex.message||'Something went wrong.'; err.style.display='block'; btn.disabled=false; btn.textContent='Get my free API key'; }
+    });
+    document.getElementById('suCopy').addEventListener('click',async function(){
+      try{ await navigator.clipboard.writeText(document.getElementById('suKey').textContent); this.textContent='Copied ✓'; }catch(e){ this.textContent='Copy failed'; }
+    });
+  })();
+</script>
 
 <footer>
   <div class="wrap">

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env, Variables } from "../types";
 import { fail, requireString } from "../lib/http";
 import { generateApiKey, sha256Hex, timingSafeEqual } from "../lib/crypto";
+import { nextMonthReset } from "../lib/quota";
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -11,6 +12,7 @@ interface CreateKeyBody {
   name?: unknown;
   owner?: unknown;
   scopes?: unknown;
+  tier?: unknown;
 }
 
 /**
@@ -47,15 +49,22 @@ auth.post("/keys", async (c) => {
     scopes = requested;
   }
 
+  // Admin-minted keys default to the Pro (unlimited) tier; pass tier:"free" to override.
+  let tier = "pro";
+  if (body.tier !== undefined) {
+    if (body.tier !== "free" && body.tier !== "pro") fail(400, "'tier' must be 'free' or 'pro'");
+    tier = body.tier;
+  }
+
   const { id, secret } = generateApiKey();
   const keyHash = await sha256Hex(secret);
   const now = Date.now();
 
   await c.env.DB.prepare(
-    `INSERT INTO api_keys (id, key_hash, name, owner, scopes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO api_keys (id, key_hash, name, owner, scopes, tier, source, monthly_usage, usage_reset_date, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, 'admin', 0, ?, ?)`,
   )
-    .bind(id, keyHash, name, owner, scopes.join(","), now)
+    .bind(id, keyHash, name, owner, scopes.join(","), tier, nextMonthReset(now), now)
     .run();
 
   return c.json(
@@ -66,6 +75,7 @@ auth.post("/keys", async (c) => {
       name,
       owner,
       scopes,
+      tier,
       created_at: now,
     },
     201,

@@ -9,7 +9,15 @@ export interface Env {
   RETRIEVE_CACHE_TTL: string;
   AUTH_CACHE_TTL: string;
   RETRIEVE_CANDIDATE_LIMIT: string;
+  FREE_TIER_MONTHLY_LIMIT: string;
+  API_RATE_LIMIT_PER_MIN: string;
+  SIGNUP_RATE_LIMIT_PER_HOUR: string;
+  RESEND_SENDER?: string;
+  RESEND_FROM?: string;
+  // Secrets (wrangler secret put):
   ADMIN_SECRET?: string;
+  RESEND_API_KEY?: string;
+  DODO_WEBHOOK_SECRET?: string;
 }
 
 /** The authenticated API key, attached to the request context by auth middleware. */
@@ -18,6 +26,7 @@ export interface AuthedKey {
   name: string;
   owner: string | null;
   scopes: string[];
+  tier: string;
 }
 
 /** Hono context variables we set during the request lifecycle. */
