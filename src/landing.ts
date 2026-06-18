@@ -11,7 +11,9 @@ const STYLE = `<style>
 h1.hero-h{font-size:clamp(3rem,8vw,7rem);font-weight:800;letter-spacing:-.03em;line-height:1.02}
 .hero p.sub{max-width:600px;margin:24px auto 0;color:var(--text-2);font-size:1.25rem}
 .cta-row{display:flex;gap:13px;justify-content:center;margin-top:36px;flex-wrap:wrap}
-.trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:26px;color:var(--text-muted);font-size:13px}
+.trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin-top:26px;font-size:.85rem;letter-spacing:.02em}
+.trust .ts{color:#a1a1aa}
+.trust .d{color:#8b5cf6}
 .metrics{margin:42px auto 0;max-width:760px;background:rgba(20,20,20,.6);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:18px 24px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:16px}
 .metrics .v{font-size:24px;font-weight:800;letter-spacing:-.02em}.metrics .lbl{color:var(--text-muted);font-size:12px;margin-top:2px}
 .proof{text-align:center;color:var(--text-muted);font-size:13px;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
@@ -36,9 +38,9 @@ table.cmp .y{color:#22c55e;font-weight:700;font-size:1.1rem}
 table.cmp .n{color:#ef4444;font-weight:700;font-size:1.1rem}
 /* discovery bar */
 .discovery-bar{text-align:center;padding:24px 0 8px;margin-top:24px}
-.discovery-label{color:#404040;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.discovery-label{color:#71717a;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
 .discovery-names{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
-.dname{color:#737373;font-size:.95rem;font-weight:500;letter-spacing:.02em;opacity:0;animation:fadeInUp .6s ease forwards;animation-delay:calc(var(--i) * 400ms + 1200ms);transition:color .3s}
+.dname{color:#a1a1aa;font-size:.95rem;font-weight:500;letter-spacing:.02em;opacity:0;animation:fadeInUp .6s ease forwards;animation-delay:calc(var(--i) * 400ms + 1200ms);transition:color .3s}
 .dname:hover{color:#8b5cf6}
 .dsep{color:#2a2a2a;opacity:0;animation:fadeInUp .6s ease forwards;animation-delay:calc(var(--i,0) * 400ms + 1400ms)}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -66,7 +68,7 @@ const body = `${STYLE}
       <a class="btn btn-primary btn-lg" href="/signup">Get API Key →</a>
       <a class="btn btn-ghost btn-lg" href="/docs">View Docs</a>
     </div>
-    <div class="trust"><span>◆ Free during beta</span><span>◆ No credit card</span><span>◆ Agent-native</span><span>◆ Works with Claude Managed Agents</span></div>
+    <div class="trust"><span class="ts"><span class="d">◆</span> Free during beta</span><span class="ts"><span class="d">◆</span> No credit card</span><span class="ts"><span class="d">◆</span> Agent-native</span><span class="ts"><span class="d">◆</span> Works with Claude Managed Agents</span></div>
     <div class="metrics" id="metrics">
       <div><div class="v" id="m-mem">—</div><div class="lbl">memories stored</div></div>
       <div><div class="v" id="m-agents">—</div><div class="lbl">active agents</div></div>

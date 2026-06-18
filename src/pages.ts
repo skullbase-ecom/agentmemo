@@ -252,6 +252,49 @@ document.getElementById('run').onclick=async function(){
 </script>`,
 });
 
+// ---- /sdk ---------------------------------------------------------------
+export const SDK_PAGE_HTML = shell({
+  title: "SDKs & Client Libraries — AgentMemo",
+  description: "Official AgentMemo SDKs for JavaScript/TypeScript and Python. Zero dependencies. Works everywhere.",
+  path: "/sdk",
+  body: `${PAGE_CSS}<style>
+  .sdk-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:880px;margin:40px auto 0}
+  .sdk-card{background:#141414;border:1px solid #1f1f1f;border-radius:14px;padding:26px}
+  .lang{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;margin-bottom:14px}
+  .lang.js{background:rgba(139,92,246,.15);color:#a78bfa}
+  .lang.py{background:rgba(6,182,212,.15);color:#22d3ee}
+  .install{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:9px;padding:10px 14px;margin:6px 0 14px}
+  .install code{color:#8b5cf6;font-family:var(--mono);font-size:13.5px}
+  .cp{background:#1f1f1f;border:0;color:#a1a1aa;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer}
+  .cp:hover{color:#fff}
+  .links{display:flex;gap:16px;margin-top:14px}.links a{font-size:13px}
+  @media(max-width:760px){.sdk-cards{grid-template-columns:1fr}}
+  </style>
+  <div class="hd wrap"><h1>SDKs &amp; <span class="accent-text">Client Libraries</span></h1><p>Official SDKs for AgentMemo. Zero dependencies. Works everywhere.</p></div>
+  <section class="section" style="padding-top:0"><div class="wrap"><div class="sdk-cards">
+    <div class="sdk-card">
+      <span class="lang js">JavaScript / TypeScript</span>
+      <div class="install"><code id="njs">npm install agentmemo-sdk</code><button class="cp" data-c="njs">Copy</button></div>
+      <div class="codewin"><div class="codebar"><span class="lbl">quickstart</span></div>
+<pre class="code"><span class="k">import</span> { AgentMemo } <span class="k">from</span> <span class="s">'agentmemo-sdk'</span>;
+<span class="k">const</span> memo = <span class="k">new</span> <span class="f">AgentMemo</span>(<span class="s">'YOUR_API_KEY'</span>);
+<span class="k">await</span> memo.<span class="f">store</span>({ userId:<span class="s">'u1'</span>, agentId:<span class="s">'bot'</span>,
+  content:<span class="s">'User prefers dark mode'</span> });</pre></div>
+      <div class="links"><a href="https://www.npmjs.com/package/agentmemo-sdk">npm ↗</a><a href="https://github.com/skullbase-ecom/agentmemo">GitHub ↗</a></div>
+    </div>
+    <div class="sdk-card">
+      <span class="lang py">Python</span>
+      <div class="install"><code id="npy">pip install agentmemo-py</code><button class="cp" data-c="npy">Copy</button></div>
+      <div class="codewin"><div class="codebar"><span class="lbl">quickstart</span></div>
+<pre class="code"><span class="k">from</span> agentmemo <span class="k">import</span> MemoryClient
+memo = <span class="f">MemoryClient</span>(<span class="s">'YOUR_API_KEY'</span>)
+memo.<span class="f">store</span>(<span class="s">'u1'</span>, <span class="s">'bot'</span>, <span class="s">'User prefers dark mode'</span>)</pre></div>
+      <div class="links"><a href="https://pypi.org/project/agentmemo-py">PyPI ↗</a><a href="https://github.com/skullbase-ecom/agentmemo">GitHub ↗</a></div>
+    </div>
+  </div></div></section>
+  <script>document.querySelectorAll('.cp').forEach(function(b){b.onclick=function(){var t=document.getElementById(b.dataset.c).textContent;navigator.clipboard.writeText(t).then(function(){b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy'},1500)})}});</script>`,
+});
+
 // ---- /blog --------------------------------------------------------------
 const ARTICLES: Record<string, { title: string; date: string; body: string }> = {
   "model-agnostic-memory": {

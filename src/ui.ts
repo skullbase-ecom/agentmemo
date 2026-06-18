@@ -10,24 +10,27 @@ export const FAVICON =
 export const THEME = `
 :root{
   --bg:#050505; --bg-elevated:#0f0f0f; --bg-card:#141414; --border:#1f1f1f; --border-hover:#2a2a2a;
-  --text:#f5f5f5; --text-2:#a3a3a3; --text-muted:#525252; --faint:#404040;
+  --text:#f5f5f5; --text-2:#a1a1aa; --text-muted:#71717a; --faint:#52525b;
   --accent:#8b5cf6; --accent-hover:#7c3aed; --accent-2:#06b6d4; --glow:rgba(139,92,246,.15);
   --success:#22c55e; --warning:#f59e0b; --error:#ef4444; --code-bg:#0a0a0a;
   --sans:'Inter',system-ui,-apple-system,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-a{color:inherit;text-decoration:none}
+body{font-family:var(--sans);background:var(--bg);color:var(--text-2);line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{color:var(--text)}
+p{color:var(--text-2);line-height:1.7}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:#a78bfa}
 .mono{font-family:var(--mono)}
 .accent-text{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-.muted{color:var(--text-2)}
+.muted{color:var(--text-muted)}
 /* nav */
 .nav{position:sticky;top:0;z-index:100;border-bottom:1px solid transparent;transition:background .2s,border-color .2s}
 .nav.scrolled{background:rgba(15,15,15,.8);backdrop-filter:blur(12px);border-color:var(--border)}
 .nav .inner{max-width:1120px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--text)}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
 .nav-links{display:flex;align-items:center;gap:26px}
 .nav-links a.l{color:var(--text-2);font-size:14px;font-weight:500;transition:color .15s}
@@ -49,7 +52,7 @@ a{color:inherit;text-decoration:none}
 .footer a:hover{color:var(--text)}
 .footer .bottom{border-top:1px solid var(--border);margin-top:40px;padding-top:24px;color:var(--text-muted);font-size:13px}
 /* generic */
-.eyebrow{color:var(--accent-2);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.eyebrow{color:var(--accent);font-weight:600;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase}
 .section{padding:88px 0}
 h1,h2,h3{letter-spacing:-.02em}
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:26px;transition:border-color .2s,transform .15s}
@@ -96,7 +99,7 @@ export function footer(): string {
       <div class="tag">Memory for the agentic web.</div>
     </div>
     <div><h4>Product</h4><a href="/docs">Docs</a><a href="/pricing">Pricing</a><a href="/changelog">Changelog</a><a href="/status">Status</a><a href="/benchmarks">Benchmarks</a><a href="/observatory">Observatory</a></div>
-    <div><h4>Developers</h4><a href="/docs">API Reference</a><a href="/mcp.json">MCP Server</a><a href="/openapi.json">OpenAPI</a><a href="/sdk">SDKs</a><a href="/playground">Playground</a></div>
+    <div><h4>Developers</h4><a href="/docs">API Reference</a><a href="/docs#mcp">MCP Server</a><a href="/openapi.json">OpenAPI</a><a href="/sdk">SDKs</a><a href="/playground">Playground</a></div>
     <div><h4>Security</h4><a href="/security">Security</a><a href="/security#audit">Audit Trail</a><a href="/security#owasp">OWASP ASI06</a><a href="/security#gdpr">GDPR</a></div>
     <div><h4>Discover</h4><a href="/auth.md">auth.md</a><a href="/llms.txt">llms.txt</a><a href="/agent-card.json">agent-card.json</a><a href="/humans.txt">humans.txt</a><a href="/manifesto">Manifesto</a></div>
   </div>
