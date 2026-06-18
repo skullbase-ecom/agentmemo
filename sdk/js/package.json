@@ -1,0 +1,26 @@
+{
+  "name": "agentmemo",
+  "version": "1.0.0",
+  "description": "Persistent memory for AI agents — store, retrieve, and recall context across sessions. Zero dependencies.",
+  "type": "module",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "files": ["index.js", "index.d.ts", "README.md"],
+  "scripts": {
+    "test": "node -e \"import('./index.js').then(m=>console.log(typeof m.AgentMemo))\""
+  },
+  "keywords": ["ai", "agent", "memory", "llm", "mcp", "vector", "semantic-search", "agentmemo"],
+  "homepage": "https://agentmemo.dev",
+  "repository": { "type": "git", "url": "https://github.com/skullbase-ecom/agentmemo" },
+  "author": "Dr. Nadeem Shaikh",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=18" },
+  "sideEffects": false
+}

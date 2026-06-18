@@ -41,6 +41,7 @@ import {
 import { MCP_MANIFEST, handleMcpRpc, type ApiCaller } from "./mcp";
 import { PROTECTED_RESOURCE_METADATA, AUTHORIZATION_SERVER_METADATA } from "./oauth-metadata";
 import { OPENAPI, API_CATALOG, AGENT_SKILLS, MCP_SERVER_CARD } from "./openapi";
+import { SDK_JS, SDK_PY, SDK_INDEX } from "./sdk";
 import { STATUS_HTML, runStatusChecks } from "./status";
 import { OBSERVATORY_HTML, runObservatory } from "./observatory";
 import { CHANGELOG_HTML } from "./changelog";
@@ -198,6 +199,11 @@ app.get("/.well-known/api-catalog", (c) => {
 });
 app.get("/.well-known/agent-skills/index.json", jsonRoute(AGENT_SKILLS));
 app.get("/.well-known/mcp/server-card.json", jsonRoute(MCP_SERVER_CARD));
+
+// SDK discovery (public).
+app.get("/sdk", textRoute(SDK_INDEX, "text/plain; charset=utf-8"));
+app.get("/sdk/js", textRoute(SDK_JS, "text/plain; charset=utf-8"));
+app.get("/sdk/python", textRoute(SDK_PY, "text/plain; charset=utf-8"));
 
 // OAuth-style discovery metadata referenced by auth.md (api_key profile).
 app.get("/.well-known/oauth-protected-resource", (c) => {
