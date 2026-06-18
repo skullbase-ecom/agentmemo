@@ -19,6 +19,7 @@ import { ABOUT_HTML } from "./about";
 import { PRICING_HTML } from "./pricing";
 import {
   LLMS_TXT,
+  HUMANS_TXT,
   ROBOTS_TXT,
   SITEMAP_XML,
   CAPABILITIES_JSON,
@@ -26,11 +27,35 @@ import {
 } from "./discovery";
 import { MCP_MANIFEST, handleMcpRpc, type ApiCaller } from "./mcp";
 import { PROTECTED_RESOURCE_METADATA, AUTHORIZATION_SERVER_METADATA } from "./oauth-metadata";
+import { STATUS_HTML, runStatusChecks } from "./status";
+import { CHANGELOG_HTML } from "./changelog";
+import { NOT_FOUND_HTML, ERROR_HTML } from "./error-pages";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 app.use("*", logger());
-app.use("*", secureHeaders());
+// Security headers on every response. CSP allows our inline styles/scripts and
+// data: images (favicons, founder portrait) but nothing third-party.
+app.use(
+  "*",
+  secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+    xFrameOptions: "DENY",
+    xContentTypeOptions: "nosniff",
+    referrerPolicy: "strict-origin-when-cross-origin",
+  }),
+);
 app.use(
   "*",
   cors({
@@ -66,6 +91,22 @@ app.get("/pricing", (c) => {
   return c.html(PRICING_HTML);
 });
 
+// Changelog.
+app.get("/changelog", (c) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.html(CHANGELOG_HTML);
+});
+
+// Live status page (auto-refreshing) + machine-readable JSON.
+app.get("/status", (c) => {
+  c.header("cache-control", "no-store");
+  return c.html(STATUS_HTML);
+});
+app.get("/status.json", async (c) => {
+  c.header("cache-control", "no-store");
+  return c.json(await runStatusChecks(c.env, Date.now()));
+});
+
 // auth.md agent-registration manifest (WorkOS auth.md open spec, api_key profile).
 app.get("/auth.md", (c) => {
   c.header("content-type", "text/markdown; charset=utf-8");
@@ -90,6 +131,8 @@ const textRoute = (body: string, contentType: string) => (c: AppContext) => {
 app.get("/llms.txt", textRoute(LLMS_TXT, "text/plain; charset=utf-8"));
 // robots.txt — explicitly allow AI crawlers.
 app.get("/robots.txt", textRoute(ROBOTS_TXT, "text/plain; charset=utf-8"));
+// humans.txt — for the humans.
+app.get("/humans.txt", textRoute(HUMANS_TXT, "text/plain; charset=utf-8"));
 // sitemap.
 app.get("/sitemap.xml", textRoute(SITEMAP_XML, "application/xml; charset=utf-8"));
 
@@ -202,13 +245,22 @@ app.route("/memory", memory);
 app.route("/usage", usage);
 
 // ---- Error handling ------------------------------------------------------
-app.notFound((c) => c.json({ error: { status: 404, message: "not found" } }, 404));
+// Browsers get a dark-theme HTML page; API clients get the JSON error shape.
+function wantsHtml(c: AppContext): boolean {
+  return (c.req.header("accept") ?? "").includes("text/html");
+}
+
+app.notFound((c) => {
+  if (wantsHtml(c)) return c.html(NOT_FOUND_HTML, 404);
+  return c.json({ error: { status: 404, message: "not found" } }, 404);
+});
 
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
   console.error("unhandled error", err);
+  if (wantsHtml(c)) return c.html(ERROR_HTML, 500);
   return c.json({ error: { status: 500, message: "internal server error" } }, 500);
 });
 
