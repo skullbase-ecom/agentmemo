@@ -12,11 +12,8 @@ export interface Env {
   FREE_TIER_MONTHLY_LIMIT: string;
   API_RATE_LIMIT_PER_MIN: string;
   SIGNUP_RATE_LIMIT_PER_HOUR: string;
-  RESEND_SENDER?: string;
-  RESEND_FROM?: string;
   // Secrets (wrangler secret put):
   ADMIN_SECRET?: string;
-  RESEND_API_KEY?: string;
   DODO_WEBHOOK_SECRET?: string;
 }
 

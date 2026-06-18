@@ -15,21 +15,22 @@ top to bottom, then start at Step 1.
 
 AgentMemo supports **agentic registration** using a simplified, API-key profile of
 the [auth.md](https://github.com/workos/auth.md) open protocol: **discover →
-register → use**. This profile issues a long-lived bearer API key instead of the
-full OAuth ID-JAG identity-assertion + claim-ceremony flow. Everything you need is
-below; no human round-trip is required once you hold an issuer credential.
+register → use**. Registration is fully self-serve and requires **zero human
+interaction** — POST your name to /signup and the bearer API key is returned
+directly in the JSON response. No email, no OTP, no verification, no approval.
 
 ## TL;DR for agents
 
 \`\`\`
 BASE        https://agentmemo.dev
 AUTH        Authorization: Bearer am_sk_...          (scopes: read, write)
-REGISTER    POST   /auth/keys      -> { "key": "am_sk_..." }   (returned once)
+REGISTER    POST   /signup         -> { "api_key": "am_sk_..." }   (returned once, no auth needed)
 STORE       POST   /memory/store   (write)  -> embeds + persists a memory
 RETRIEVE    GET    /memory/retrieve (read)  -> semantic search, ranked
 FORGET      DELETE /memory/forget  (write)  -> delete by id or scope
-USAGE       GET    /usage          -> request/token/latency stats
+USAGE       GET    /usage          -> used / limit / tier / reset_date
 DOCS        https://agentmemo.dev/docs
+MCP         https://agentmemo.dev/mcp   (manifest: /mcp.json)
 DISCOVERY   https://agentmemo.dev/.well-known/agent.json
             https://agentmemo.dev/agent-card.json   (A2A AgentCard)
             https://agentmemo.dev/capabilities.json
@@ -61,39 +62,37 @@ GET /capabilities.json      # full capability + use-case catalog
 The \`authentication\` block names the signup endpoint and supported scopes; the
 \`skills\` array lists the callable operations (store, retrieve, forget).
 
-## Step 2 — Register
+## Step 2 — Register (self-serve, no auth required)
 
-Obtain an API key from the signup endpoint. This is the agent registration step.
+POST to /signup with a \`name\`. \`email\` is **optional** (stored for our records
+only; never required for an agent). The key is returned in the response body.
 
 \`\`\`http
-POST /auth/keys
+POST /signup
 Content-Type: application/json
-Authorization: Bearer <issuer_or_admin_token>
 
-{
-  "name": "my-agent",
-  "owner": "agent@example.com",
-  "scopes": ["read", "write"]
-}
+{ "name": "my-agent" }
 \`\`\`
 
-Response (\`201 Created\`) — the \`key\` is returned **exactly once**:
+Response (\`201 Created\`) — the \`api_key\` is returned **exactly once**:
 
 \`\`\`json
 {
   "id": "am_pk_...",
-  "key": "am_sk_...",
-  "name": "my-agent",
-  "owner": "agent@example.com",
+  "api_key": "am_sk_...",
+  "tier": "free",
+  "limit": 10000,
+  "reset_date": 1782864000000,
   "scopes": ["read", "write"],
-  "created_at": 1781729785946
+  "docs": "https://agentmemo.dev/docs",
+  "mcp": "https://agentmemo.dev/mcp"
 }
 \`\`\`
 
-> **Authorization to register.** Key issuance is gated: \`POST /auth/keys\` requires
-> an issuer credential (bearer token). If you do not hold one, request access at
-> https://agentmemo.dev/#get-key and a key will be provisioned. Persist the
-> returned \`am_sk_\` key securely — it cannot be recovered.
+Persist the returned \`am_sk_\` key securely — it cannot be recovered. There is no
+email, OTP, or verification step. (Privileged/Pro keys can also be minted by an
+operator via \`POST /auth/keys\` with the admin secret, but agents should use
+\`/signup\`.)
 
 ## Step 3 — Authenticate
 
@@ -201,7 +200,9 @@ export const AGENT_JSON = {
     scheme: "Bearer",
     token_prefix: "am_sk_",
     registration: "https://agentmemo.dev/auth.md",
-    signup_endpoint: "POST /auth/keys",
+    signup_endpoint: "POST /signup",
+    self_serve: true,
+    human_interaction_required: false,
     scopes_supported: ["read", "write"],
   },
   capabilities: {
@@ -260,6 +261,7 @@ export const AGENT_JSON = {
     api_base: "https://agentmemo.dev",
     docs: "https://agentmemo.dev/docs",
     auth_manifest: "https://agentmemo.dev/auth.md",
-    signup: "https://agentmemo.dev/auth/keys",
+    signup: "https://agentmemo.dev/signup",
+    mcp: "https://agentmemo.dev/mcp",
   },
 } as const;

@@ -69,11 +69,11 @@ export const SIGNUP_HTML = `<!DOCTYPE html>
     <form id="form">
       <label for="name">Name</label>
       <input id="name" name="name" type="text" placeholder="Ada Lovelace" required maxlength="200" />
-      <label for="email">Email</label>
-      <input id="email" name="email" type="email" placeholder="you@example.com" required maxlength="256" />
+      <label for="email">Email <span style="color:var(--faint)">(optional)</span></label>
+      <input id="email" name="email" type="email" placeholder="you@example.com" maxlength="256" />
       <button type="submit" id="submit">Create my API key</button>
     </form>
-    <p class="fine">By signing up you agree to fair use of the free tier. Your key is emailed to you and shown once below.</p>
+    <p class="fine">By signing up you agree to fair use of the free tier. Your key appears instantly below — copy it now, it's shown only once.</p>
   </div>
 
   <div class="card result" id="result">
@@ -104,8 +104,8 @@ export const SIGNUP_HTML = `<!DOCTYPE html>
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error((data && data.error && data.error.message) || 'Signup failed');
-      document.getElementById('key').textContent = data.key;
+      if (!res.ok) throw new Error((data && data.error && (data.error.message || data.error)) || 'Signup failed');
+      document.getElementById('key').textContent = data.api_key || data.key;
       document.getElementById('formCard').style.display = 'none';
       document.getElementById('result').style.display = 'block';
     } catch (ex) {

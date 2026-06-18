@@ -327,14 +327,15 @@ export const DOCS_HTML = `<!DOCTYPE html>
     <p>Free tier allows <b>10,000 operations/month</b>; over the limit, memory calls return <code>429 { "error": "free tier limit reached" }</code>. <a href="/pricing">Upgrade to Pro</a> for unlimited.</p>
 
     <h2 id="signup">Get an API key</h2>
-    <p>Self-serve, no approval needed. <a href="/signup">Use the signup page</a>, or register programmatically — agents can call this directly:</p>
+    <p>Self-serve and agent-first — no auth, no email, no approval. The key is returned directly in the response. <a href="/signup">Use the signup page</a>, or register programmatically:</p>
     <div class="code-window">
       <div class="code-bar"><span class="lbl">cURL</span></div>
 <pre><code><span class="tok-f">curl</span> -X POST <span class="tok-m">https://agentmemo.dev/signup</span> \\
   -H <span class="tok-s">"Content-Type: application/json"</span> \\
-  -d <span class="tok-s">'{ "name": "My Agent", "email": "you@example.com" }'</span>
-<span class="tok-c"># → { "key": "am_sk_...", "tier": "free", "limits": { "operations_per_month": 10000 } }</span></code></pre>
+  -d <span class="tok-s">'{ "name": "My Agent" }'</span>
+<span class="tok-c"># → { "api_key": "am_sk_...", "tier": "free", "limit": 10000, "reset_date": ..., "mcp": "..." }</span></code></pre>
     </div>
+    <p><code>email</code> is optional (stored for our records only, never required for an agent).</p>
 
     <h2 id="mcp">MCP server</h2>
     <p>AgentMemo is a native <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server, so MCP-capable clients (Claude, Cursor, and others) can use it as a tool. Point your client at the endpoint and authenticate with your API key.</p>

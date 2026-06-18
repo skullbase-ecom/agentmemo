@@ -44,10 +44,7 @@ FREE_TIER_MONTHLY_LIMIT = "10000"
 API_RATE_LIMIT_PER_MIN = "100"
 # Self-serve signups allowed per IP per hour.
 SIGNUP_RATE_LIMIT_PER_HOUR = "3"
-# Verified sender for welcome emails (used with RESEND_API_KEY).
-RESEND_SENDER = "hello@agentmemo.dev"
 
 # Secrets (set via `wrangler secret put`, never commit):
 #   ADMIN_SECRET         — required to mint privileged keys (POST /auth/keys)
-#   RESEND_API_KEY       — enables welcome emails on self-serve signup
 #   DODO_WEBHOOK_SECRET  — verifies Dodo Payments webhooks (/webhooks/dodo)

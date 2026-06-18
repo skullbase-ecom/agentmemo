@@ -27,7 +27,7 @@ Pro: $19/month for unlimited memories.
 - [Retrieve memories](${BASE}/docs#retrieve): GET /memory/retrieve — semantic search ranked by cosine similarity.
 - [Forget memories](${BASE}/docs#forget): DELETE /memory/forget — delete one memory or a whole user/agent scope.
 - [Usage](${BASE}/docs#usage): GET /usage — requests, tokens, latency per API key.
-- [Get an API key](${BASE}/auth.md): POST /auth/keys — bearer-token registration.
+- [Get an API key](${BASE}/signup): POST /signup with a name — self-serve, no auth, key returned in the response. Email optional.
 
 ## Documentation
 - [Full API reference](${BASE}/docs): authentication, endpoints, request/response examples.
@@ -130,7 +130,9 @@ export const CAPABILITIES_JSON = {
     header: "Authorization",
     format: "Bearer am_sk_...",
     scopes: ["read", "write"],
-    signup: `${BASE}/auth/keys`,
+    signup: `${BASE}/signup`,
+    signup_self_serve: true,
+    human_interaction_required: false,
   },
   capabilities: {
     store_memory: {
@@ -221,7 +223,7 @@ export const AGENT_CARD = {
       type: "http",
       scheme: "bearer",
       bearerFormat: "am_sk",
-      description: "AgentMemo API key obtained from POST /auth/keys.",
+      description: "AgentMemo API key obtained from self-serve POST /signup (no auth required).",
     },
   },
   security: [{ bearer_api_key: [] }],

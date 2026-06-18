@@ -346,7 +346,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
         <div class="su-err" id="suErr" style="display:none;color:#ff6b81;font-size:14px;margin-bottom:12px;"></div>
         <input id="suName" type="text" placeholder="Your name" required maxlength="200"
           style="width:100%;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;margin-bottom:12px;outline:none;" />
-        <input id="suEmail" type="email" placeholder="you@example.com" required maxlength="256"
+        <input id="suEmail" type="email" placeholder="you@example.com (optional)" maxlength="256"
           style="width:100%;background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;margin-bottom:14px;outline:none;" />
         <button class="btn btn-primary btn-lg" type="submit" id="suBtn" style="width:100%;justify-content:center;">Get my free API key</button>
       </form>
@@ -372,7 +372,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
         var res=await fetch('/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:document.getElementById('suName').value.trim(),email:document.getElementById('suEmail').value.trim()})});
         var data=await res.json();
         if(!res.ok) throw new Error((data&&data.error&&(data.error.message||data.error))||'Signup failed');
-        document.getElementById('suKey').textContent=data.key;
+        document.getElementById('suKey').textContent=data.api_key||data.key;
         form.style.display='none'; document.getElementById('suResult').style.display='block';
       }catch(ex){ err.textContent=ex.message||'Something went wrong.'; err.style.display='block'; btn.disabled=false; btn.textContent='Get my free API key'; }
     });
