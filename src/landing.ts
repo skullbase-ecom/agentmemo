@@ -55,6 +55,16 @@ table.cmp .n{color:#ef4444;font-weight:700;font-size:1.1rem}
 .pc ul{list-style:none;margin:18px 0;display:grid;gap:10px}.pc li{color:var(--text-2);font-size:14px;display:flex;gap:9px}.pc li::before{content:"✓";color:var(--accent-2)}
 .pc .btn{width:100%;justify-content:center}
 @media(max-width:860px){.steps,.grid3,.grid2,.price-cards{grid-template-columns:1fr}}
+@media(max-width:768px){
+  .hero{padding:80px 0 48px}
+  h1.hero-h{font-size:clamp(2rem,9vw,3rem)}
+  .hero p.sub{font-size:1.05rem;max-width:100%}
+  .metrics{flex-wrap:wrap;padding:16px}
+  .metrics>div{flex:1 1 42%}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  pre.code{font-size:.72rem;max-height:320px;overflow:auto}
+  .cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
 </style>`;
 
 const body = `${STYLE}
@@ -163,7 +173,7 @@ hits = m.<span class="f">search</span>(user_id=<span class="s">"u1"</span>, quer
 
 <section class="section" id="compare"><div class="wrap">
   <div class="sec-title"><span class="eyebrow">Comparison</span><h2>How AgentMemo compares</h2></div>
-  <table class="cmp">
+  <div class="cmp-scroll"><table class="cmp">
     <thead><tr><th>Feature</th><th>AgentMemo</th><th>Mem0</th><th>Zep</th></tr></thead>
     <tbody>
     <tr><td>Edge deployment</td><td class="am"><span class="y">✅</span></td><td><span class="n">❌</span></td><td><span class="n">❌</span></td></tr>
@@ -176,7 +186,7 @@ hits = m.<span class="f">search</span>(user_id=<span class="s">"u1"</span>, quer
     <tr><td>Temporal knowledge graph</td><td>roadmap</td><td><span class="n">❌</span></td><td><span class="y">✅</span></td></tr>
     <tr><td>Open source</td><td class="am"><span class="y">✅</span></td><td><span class="y">✅</span></td><td>partial</td></tr>
     </tbody>
-  </table>
+  </table></div>
 </div></section>
 
 <section class="section" id="pricing"><div class="wrap">

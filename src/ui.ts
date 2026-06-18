@@ -41,7 +41,17 @@ a:hover{color:#a78bfa}
 .btn-ghost{background:transparent;border-color:var(--border);color:var(--text)}
 .btn-ghost:hover{border-color:var(--border-hover)}
 .btn-lg{padding:13px 24px;font-size:15px}
-.menu-toggle{display:none;background:none;border:0;color:var(--text);font-size:22px;cursor:pointer}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px}
+.hamburger span{display:block;width:24px;height:2px;background:#f5f5f5;border-radius:2px;transition:all .3s}
+.hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{display:none;background:#0f0f0f;border-top:1px solid var(--border)}
+.mobile-menu.open{display:block}
+.mobile-menu .inner-m{max-width:1120px;margin:0 auto;padding:8px 24px 18px}
+.mobile-menu a{display:block;padding:13px 0;color:var(--text-2);font-size:1rem;border-bottom:1px solid #161616}
+.mobile-menu a:hover{color:var(--accent)}
+.mobile-menu a.btn{margin-top:16px;border-bottom:0;text-align:center;color:#fff}
 /* footer */
 .footer{border-top:1px solid var(--border);margin-top:96px;padding:56px 0 40px}
 .footer .cols{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:32px}
@@ -64,10 +74,40 @@ h1,h2,h3{letter-spacing:-.02em}
 .codebar .fn{margin-left:8px;color:var(--text-muted);font-size:12px;font-family:var(--mono)}
 pre.code{padding:18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.7;color:#cdd3e0}
 .k{color:#c792ea}.s{color:#c3e88d}.f{color:#82aaff}.p{color:#f78c6c}.c{color:#5b6373}.m{color:#06b6d4}
-@media(max-width:860px){
-  .nav-links{display:none}.menu-toggle{display:block}
-  .footer .cols{grid-template-columns:1fr 1fr;gap:24px}
-  .section{padding:60px 0}
+/* ---- Mobile (<=768px) ---- */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hamburger{display:flex}
+  h1{font-size:clamp(1.9rem,7vw,2.6rem)}
+  h2{font-size:clamp(1.4rem,5vw,2rem)}
+  h3{font-size:1.1rem}
+  .section{padding:48px 0}
+  .wrap{padding:0 20px}
+  /* any multi-column grid -> single column */
+  .grid3,.grid2,.cards-3,.cards-2,.price-cards,.cards,.code-grid,.steps,.sdk-cards,.disc-grid,.g2,.stats,.disc-card{grid-template-columns:1fr!important}
+  .footer .cols{grid-template-columns:1fr!important;gap:28px}
+  /* buttons + CTAs full width, stacked */
+  .cta-row{flex-direction:column;align-items:stretch}
+  .cta-row .btn,.btn-lg{width:100%;justify-content:center}
+  /* hero metrics 2x2 */
+  .metrics{flex-wrap:wrap}
+  .metrics>div{flex:1 1 40%}
+  /* trust signals stack */
+  .trust{flex-direction:column;gap:8px;align-items:center}
+  /* discovery names tighter */
+  .discovery-names{gap:8px}
+  .dname{font-size:.8rem}
+  /* code smaller, scrollable */
+  pre,pre.code,.code{font-size:.78rem}
+  /* comparison/data tables scroll horizontally */
+  .cmp-scroll,.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.cmp{min-width:480px}
+}
+/* ---- Tablet (769–1024px) ---- */
+@media(min-width:769px) and (max-width:1024px){
+  .wrap{padding:0 32px}
+  .grid3,.cards-3{grid-template-columns:repeat(2,1fr)}
+  .footer .cols{grid-template-columns:repeat(2,1fr)}
 }`;
 
 const NAV_LINKS = [
@@ -83,12 +123,19 @@ const NAV_LINKS = [
 
 export function nav(): string {
   const links = NAV_LINKS.map(([h, t]) => `<a class="l" href="${h}">${t}</a>`).join("");
+  const mlinks = NAV_LINKS.map(([h, t]) => `<a href="${h}">${t}</a>`).join("");
   return `<nav class="nav" id="nav"><div class="inner">
   <a href="/" class="brand"><span class="dot"></span> AgentMemo</a>
   <div class="nav-links">${links}<a class="btn btn-primary" href="/signup">Get API Key →</a></div>
-  <button class="menu-toggle" onclick="var n=document.querySelector('.nav-links');n.style.display=n.style.display==='flex'?'none':'flex';n.style.flexDirection='column'">☰</button>
-</div></nav>
-<script>addEventListener('scroll',function(){document.getElementById('nav').classList.toggle('scrolled',scrollY>10)})</script>`;
+  <button class="hamburger" id="hb" onclick="amToggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+</div>
+<div class="mobile-menu" id="mobileMenu"><div class="inner-m">${mlinks}<a class="btn btn-primary" href="/signup">Get API Key →</a></div></div>
+</nav>
+<script>
+function amToggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');document.getElementById('hb').classList.toggle('open')}
+document.querySelectorAll('#mobileMenu a').forEach(function(a){a.addEventListener('click',function(){document.getElementById('mobileMenu').classList.remove('open');document.getElementById('hb').classList.remove('open')})});
+addEventListener('scroll',function(){document.getElementById('nav').classList.toggle('scrolled',scrollY>10)});
+</script>`;
 }
 
 export function footer(): string {
