@@ -39,6 +39,7 @@ const body = `<div class="ph wrap">
       <ul><li>Custom SLA</li><li>Audit &amp; compliance</li><li>EU data residency</li><li>Dedicated support</li></ul>
       <a class="btn btn-ghost" href="/signup">Contact</a></div>
   </div>
+  <p style="text-align:center;color:var(--text-2);max-width:620px;margin:28px auto 0">Agents can upgrade themselves programmatically via <a class="accent-text" href="/docs/agent-payments">Dodo Payments MCP</a> — no human needed.</p>
   <div class="faq">
     <h3>What does beta cost?</h3>
     <p>Nothing. During the public beta, AgentMemo is free and unlimited — no operation caps. A per-key rate limit applies purely as abuse protection.</p>

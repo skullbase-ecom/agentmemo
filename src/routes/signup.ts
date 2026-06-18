@@ -63,11 +63,16 @@ signup.post("/", async (c) => {
     {
       id,
       api_key: secret, // shown exactly once
-      tier: "beta",
-      limit: null,
-      unlimited: true,
-      beta: true,
+      tier: "free",
+      limit: 10000,
       scopes: ["read", "write"],
+      upgrade_url: "https://checkout.dodopayments.com/buy/pdt_0NhKvw8RSLuiPu2bD2IQH?quantity=1",
+      upgrade_via_mcp: {
+        description: "Agents can upgrade programmatically via Dodo Payments MCP",
+        dodo_mcp: "https://mcp.dodopayments.com",
+        product_id: "pdt_0NhKvw8RSLuiPu2bD2IQH",
+        docs: "https://agentmemo.dev/docs/agent-payments",
+      },
       docs: "https://agentmemo.dev/docs",
       mcp: "https://agentmemo.dev/mcp",
       created_at: now,

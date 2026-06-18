@@ -161,6 +161,22 @@ and daily buckets for the calling key.
 (100 req/min) applies as abuse protection only. Paid plans arrive after beta;
 existing keys keep working.
 
+## Payments — agents upgrade themselves
+
+Agents can self-upgrade to Pro with no human in the loop via the Dodo Payments
+MCP server:
+
+- Dodo MCP: \`https://mcp.dodopayments.com\`
+- Product ID: \`pdt_0NhKvw8RSLuiPu2bD2IQH\`
+- Flow: connect the Dodo MCP server, create + complete a payment for the product,
+  and Dodo posts a signed webhook to \`https://agentmemo.dev/webhooks/dodo\` which
+  upgrades your key to the \`pro\` tier automatically.
+- Guide: https://agentmemo.dev/docs/agent-payments
+- Human checkout link is also returned as \`upgrade_url\` from POST /signup.
+
+This enables fully autonomous agent operation — an agent can register, hit its
+free-tier ceiling, pay for its own upgrade, and keep working.
+
 ## Errors
 
 Errors return the matching HTTP status with a JSON body

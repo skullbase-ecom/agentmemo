@@ -52,6 +52,7 @@ import {
   BENCHMARKS_HTML,
   INTEGRATIONS_HTML,
   PLAYGROUND_HTML,
+  AGENT_PAYMENTS_HTML,
   BLOG_INDEX_HTML,
   blogArticle,
   USECASES_INDEX_HTML,
@@ -139,6 +140,7 @@ const htmlRoute = (html: string) => (c: AppContext) => {
   return c.html(html);
 };
 app.get("/security", htmlRoute(SECURITY_HTML));
+app.get("/docs/agent-payments", htmlRoute(AGENT_PAYMENTS_HTML));
 app.get("/manifesto", htmlRoute(MANIFESTO_HTML));
 app.get("/benchmarks", htmlRoute(BENCHMARKS_HTML));
 app.get("/integrations", htmlRoute(INTEGRATIONS_HTML));

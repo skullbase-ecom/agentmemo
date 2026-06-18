@@ -98,6 +98,16 @@ clients can use it as a tool with no glue code.
 - Public beta: free and unlimited — no operation limits. Get a key and start.
 - Paid plans will arrive after beta; existing keys keep working.
 
+## Payments (agent self-upgrade)
+
+Agents can pay for their own Pro upgrade — no human needed — via the Dodo
+Payments MCP server. Connect ${"https://mcp.dodopayments.com"} alongside the
+AgentMemo MCP server, create a payment for product_id pdt_0NhKvw8RSLuiPu2bD2IQH,
+and complete it. Dodo posts a signed webhook to ${BASE}/webhooks/dodo and the
+key is upgraded to Pro automatically. This enables fully autonomous agent
+operation. Guide: ${BASE}/docs/agent-payments. Checkout (human): the upgrade_url
+returned by POST /signup.
+
 ## Rate limits
 
 - 100 requests/minute per API key (HTTP 429 + Retry-After) — abuse protection, not a usage cap.
@@ -220,6 +230,7 @@ export const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${BASE}/security</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>${BASE}/benchmarks</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>${BASE}/integrations</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>${BASE}/docs/agent-payments</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>${BASE}/playground</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/manifesto</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>${BASE}/blog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
