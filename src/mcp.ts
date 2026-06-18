@@ -59,6 +59,38 @@ export const MCP_TOOLS = [
     description: "Get usage for the calling API key: operations used this month, tier, and limit.",
     inputSchema: { type: "object", properties: {} },
   },
+  {
+    name: "get_context",
+    description: "Get a user's memories pre-formatted for LLM system-prompt injection.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        user_id: { type: "string" },
+        agent_id: { type: "string" },
+        format: { type: "string", enum: ["anthropic", "openai", "raw"] },
+        max_tokens: { type: "integer" },
+      },
+      required: ["user_id"],
+    },
+  },
+  {
+    name: "give_feedback",
+    description: "Update a memory's outcome (success/failure) after it was used.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        memory_id: { type: "string" },
+        outcome: { type: "string", enum: ["success", "failure"] },
+        confidence: { type: "number" },
+      },
+      required: ["memory_id", "outcome"],
+    },
+  },
+  {
+    name: "get_stats",
+    description: "Comprehensive memory statistics and quality score.",
+    inputSchema: { type: "object", properties: { user_id: { type: "string" } } },
+  },
 ] as const;
 
 export const MCP_MANIFEST = {
@@ -120,6 +152,21 @@ async function runTool(name: string, args: Record<string, unknown>, call: ApiCal
     }
     case "get_usage":
       return call({ method: "GET", path: "/usage" });
+    case "get_context": {
+      const q = new URLSearchParams();
+      if (args.user_id != null) q.set("user_id", String(args.user_id));
+      if (args.agent_id != null) q.set("agent_id", String(args.agent_id));
+      if (args.format != null) q.set("format", String(args.format));
+      if (args.max_tokens != null) q.set("max_tokens", String(args.max_tokens));
+      return call({ method: "GET", path: `/memory/context?${q}` });
+    }
+    case "give_feedback":
+      return call({ method: "POST", path: "/memory/feedback", body: args });
+    case "get_stats": {
+      const q = new URLSearchParams();
+      if (args.user_id != null) q.set("user_id", String(args.user_id));
+      return call({ method: "GET", path: `/memory/stats?${q}` });
+    }
     default:
       throw new Error(`unknown tool: ${name}`);
   }

@@ -40,6 +40,7 @@ import {
 } from "./discovery";
 import { MCP_MANIFEST, handleMcpRpc, type ApiCaller } from "./mcp";
 import { PROTECTED_RESOURCE_METADATA, AUTHORIZATION_SERVER_METADATA } from "./oauth-metadata";
+import { OPENAPI, API_CATALOG, AGENT_SKILLS, MCP_SERVER_CARD } from "./openapi";
 import { STATUS_HTML, runStatusChecks } from "./status";
 import { OBSERVATORY_HTML, runObservatory } from "./observatory";
 import { CHANGELOG_HTML } from "./changelog";
@@ -70,6 +71,15 @@ app.use(
     referrerPolicy: "strict-origin-when-cross-origin",
   }),
 );
+
+// RFC 8288 Link headers on every response so agents can discover docs/spec/policy.
+app.use("*", async (c, next) => {
+  await next();
+  c.header(
+    "Link",
+    '</docs>; rel="service-doc", </openapi.json>; rel="service-desc", </.well-known/api-catalog>; rel="api-catalog", </auth.md>; rel="auth-policy"',
+  );
+});
 app.use(
   "*",
   cors({
@@ -174,6 +184,20 @@ const agentCard = (c: AppContext) => {
 };
 app.get("/agent-card.json", agentCard);
 app.get("/.well-known/agent-card.json", agentCard);
+
+// Section 5 — agent-readiness discovery documents.
+const jsonRoute = (obj: unknown) => (c: AppContext) => {
+  c.header("cache-control", "public, max-age=3600");
+  return c.json(obj as object);
+};
+app.get("/openapi.json", jsonRoute(OPENAPI));
+app.get("/.well-known/api-catalog", (c) => {
+  c.header("content-type", "application/linkset+json");
+  c.header("cache-control", "public, max-age=3600");
+  return c.body(JSON.stringify(API_CATALOG));
+});
+app.get("/.well-known/agent-skills/index.json", jsonRoute(AGENT_SKILLS));
+app.get("/.well-known/mcp/server-card.json", jsonRoute(MCP_SERVER_CARD));
 
 // OAuth-style discovery metadata referenced by auth.md (api_key profile).
 app.get("/.well-known/oauth-protected-resource", (c) => {

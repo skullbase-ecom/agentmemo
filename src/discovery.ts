@@ -204,6 +204,7 @@ Allow: /
 
 User-agent: *
 Allow: /
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
 
 Sitemap: ${BASE}/sitemap.xml
 # LLM guide: ${BASE}/llms.txt
