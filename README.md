@@ -1,104 +1,128 @@
 # AgentMemo
 
-An Agent Memory API on **Cloudflare Workers** (Hono) with **D1** for storage, **KV** for caching, and **Workers AI** for embeddings — so agents can store, semantically retrieve, and forget long-term memories.
+> Memory for the agentic web.
 
-## Endpoints
+[![Live](https://img.shields.io/badge/live-agentmemo.dev-8b5cf6)](https://agentmemo.dev)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![MCP](https://img.shields.io/badge/MCP-native-22c55e)](https://agentmemo.dev/.well-known/mcp/server-card.json)
+[![OWASP](https://img.shields.io/badge/OWASP%20ASI06-protected-ef4444)](https://agentmemo.dev/security)
 
-| Method | Path | Auth | Description |
-| ------ | ---- | ---- | ----------- |
-| `POST` | `/auth/keys` | Admin secret | Mint a developer API key (plaintext returned once) |
-| `POST` | `/memory/store` | API key (`write`) | Store a memory + embedding |
-| `GET`  | `/memory/retrieve` | API key (`read`) | Semantic search over memories |
-| `DELETE` | `/memory/forget` | API key (`write`) | Delete a memory by id, or a whole user/agent scope |
-| `GET`  | `/usage` | API key | Usage stats (requests, tokens, latency, per-route, daily) |
-| `GET`  | `/health` | — | Liveness + D1 connectivity |
+Persistent memory infrastructure for AI agents. Store, semantically retrieve, and recall context across every session — at the edge, in milliseconds. Model-agnostic, MCP-native, security-first.
 
-Authenticate API requests with `Authorization: Bearer am_sk_...`.
+**Live:** https://agentmemo.dev · **Docs:** https://agentmemo.dev/docs · **Free & unlimited during public beta.**
 
-## How retrieval works
-
-On `store`, the content is embedded via Workers AI (`@cf/baai/bge-base-en-v1.5`, 768-dim) and the L2-normalized vector is saved in D1. On `retrieve`, the query is embedded and candidate memories for the `(key, user[, agent])` scope are ranked by cosine similarity in the Worker, top-k returned. Results are cached in KV per exact query, keyed by a per-scope version counter that `store`/`forget` bump for immediate invalidation. If Workers AI is unavailable, store/retrieve degrade gracefully to recency ordering (`semantic: false`).
-
-## Setup
+## Quick start (60 seconds)
 
 ```bash
-npm install
-npx wrangler login
-
-# Create resources, then paste the returned ids into wrangler.toml:
-npx wrangler d1 create agentmemo-db
-npx wrangler kv namespace create CACHE
-
-# Apply the schema (local + remote):
-npm run db:schema:local
-npm run db:schema:remote
-
-# Admin secret used to mint keys:
-npx wrangler secret put ADMIN_SECRET          # production
-cp .dev.vars.example .dev.vars                # local dev (edit the value)
-```
-
-## Run & deploy
-
-```bash
-npm run dev       # local: http://127.0.0.1:8787
-npm run deploy    # publish to Cloudflare
-npm run typecheck # tsc --noEmit
-```
-
-> Note: Workers AI does not run in `wrangler dev --local`; embeddings (and thus semantic ranking) only activate against the deployed Worker or with remote bindings. Locally, retrieval falls back to recency.
-
-## Example
-
-```bash
-# 1. Mint a key (admin)
-curl -X POST $BASE/auth/keys \
-  -H "Authorization: Bearer $ADMIN_SECRET" -H "Content-Type: application/json" \
-  -d '{"name":"my-app","owner":"dev@example.com","scopes":["read","write"]}'
-# => { "id": "am_pk_...", "key": "am_sk_...", ... }   (store the key — shown once)
+# 1. Get a free API key (self-serve, no human needed)
+curl -X POST https://agentmemo.dev/signup -d '{"name":"my-agent"}'
 
 # 2. Store a memory
-curl -X POST $BASE/memory/store \
-  -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
-  -d '{"user_id":"u1","agent_id":"a1","content":"User prefers dark mode and lives in Berlin.","metadata":{"topic":"prefs"}}'
+curl -X POST https://agentmemo.dev/memory/store \
+  -H "Authorization: Bearer YOUR_KEY" \
+  -d '{"user_id":"user_123","agent_id":"assistant","content":"User prefers dark mode, works in TypeScript"}'
 
 # 3. Retrieve semantically
-curl "$BASE/memory/retrieve?user_id=u1&agent_id=a1&q=where%20does%20the%20user%20live&limit=5" \
-  -H "Authorization: Bearer $KEY"
+curl "https://agentmemo.dev/memory/retrieve?user_id=user_123&q=user+preferences" \
+  -H "Authorization: Bearer YOUR_KEY"
 
-# 4. Usage
-curl "$BASE/usage" -H "Authorization: Bearer $KEY"
-
-# 5. Forget
-curl -X DELETE "$BASE/memory/forget?id=mem_..." -H "Authorization: Bearer $KEY"
-curl -X DELETE "$BASE/memory/forget?user_id=u1&agent_id=a1" -H "Authorization: Bearer $KEY"
+# 4. Get context formatted for an LLM system prompt
+curl "https://agentmemo.dev/memory/context?user_id=user_123&format=anthropic" \
+  -H "Authorization: Bearer YOUR_KEY"
 ```
 
-## Project layout
+## Claude Managed Agents
 
-```
-wrangler.toml          Worker config + D1/KV/AI bindings
-schema.sql             D1 schema (api_keys, memories, usage_events)
-seed.sql               Optional local demo key
-src/
-  index.ts             App wiring, middleware order, error handling
-  types.ts             Env bindings + shared types
-  lib/
-    crypto.ts          Key generation, SHA-256 hashing, timing-safe compare
-    embeddings.ts      Workers AI embeddings + cosine similarity
-    http.ts            JSON errors + input validation
-    ids.ts             Prefixed entity ids
-  middleware/
-    auth.ts            API-key auth (KV-cached) + scope enforcement
-    usage.ts           Per-request usage metering (fire-and-forget)
-  routes/
-    auth.ts            POST /auth/keys
-    memory.ts          store / retrieve / forget
-    usage.ts           GET /usage
+Add persistent memory to any Claude Managed Agent in one line of JSON:
+
+```json
+{
+  "mcp_servers": [{
+    "type": "url",
+    "name": "agentmemo",
+    "url": "https://agentmemo.dev/mcp",
+    "authorization_token": "Bearer YOUR_KEY"
+  }]
+}
 ```
 
-## Security notes
+Tools: `store_memory`, `retrieve_memory`, `get_context`, `forget_memory`, `give_feedback`, `get_stats`, `get_usage`.
 
-- API keys are stored only as SHA-256 hashes; plaintext is returned once at creation.
-- All memory reads/writes/deletes are scoped to the calling key — no cross-tenant access.
-- Key minting requires `ADMIN_SECRET` (timing-safe compared); never commit it.
+## SDKs
+
+```bash
+npm install agentmemo-sdk     # JavaScript / TypeScript (zero deps)
+pip install agentmemo-py      # Python (stdlib only)
+```
+
+```js
+import { AgentMemo } from "agentmemo-sdk";
+const m = new AgentMemo("YOUR_KEY");
+await m.store({ userId: "u1", agentId: "a1", content: "Prefers dark mode" });
+const { results } = await m.retrieve({ userId: "u1", query: "preferences" });
+```
+
+## Memory types
+
+| Type | Endpoints | What it's for |
+|------|-----------|---------------|
+| Semantic | `/memory/store`, `/retrieve`, `/forget` | Facts & knowledge (importance, TTL, tags, namespaces) |
+| Episodic | `/memory/episodes/*` | Replayable sessions, auto-summarized |
+| Procedural | `/memory/procedures`, `/procedures/match` | How-to workflows, matched to a task |
+| Working | `/memory/working` | Short-term per-session context (1h TTL) |
+| Emotional | `/memory/emotional`, `/emotional/profile` | Sentiment + per-user trust score |
+
+Plus a memory **graph** (link/explore/conflicts), **context builder**, **batch**, **feedback**, **compression**, **import/export**, **stats**, and **agent identity**.
+
+## Why AgentMemo
+
+| Feature | AgentMemo | Mem0 | Zep |
+|---|---|---|---|
+| Edge deployment | ✅ | ❌ | ❌ |
+| MCP native | ✅ | ❌ | ❌ |
+| auth.md support | ✅ | ❌ | ❌ |
+| OWASP ASI06 protection | ✅ | ❌ | ❌ |
+| Full audit trail | ✅ | ❌ | ❌ |
+| Free tier | ✅ unlimited (beta) | ✅ limited | ❌ |
+| Graph memory | ✅ basic | paid | ✅ |
+| Temporal KG | roadmap | ❌ | ✅ |
+| Open source | ✅ | ✅ | partial |
+
+## Architecture
+
+```
+  Agent / LLM
+      │  HTTPS (REST or MCP)
+      ▼
+  ┌──────────────────────────────┐
+  │  AgentMemo API (edge)        │
+  │  • auth + trust scoring      │
+  │  • embeddings + vector rank  │
+  │  • audit log                 │
+  └───────┬───────────┬──────────┘
+          │           │
+      vector DB    KV cache
+   (durable memory) (hot reads + rate limits)
+```
+
+## Discovery (for agents)
+
+- OpenAPI: https://agentmemo.dev/openapi.json
+- MCP server card: https://agentmemo.dev/.well-known/mcp/server-card.json
+- auth.md: https://agentmemo.dev/auth.md
+- llms.txt: https://agentmemo.dev/llms.txt
+- Agent card: https://agentmemo.dev/agent-card.json
+- Capabilities: https://agentmemo.dev/capabilities.json
+- Observatory (live, anonymized): https://agentmemo.dev/observatory
+
+## Documentation
+
+[Docs](https://agentmemo.dev/docs) · [Pricing](https://agentmemo.dev/pricing) · [Security](https://agentmemo.dev/security) · [Benchmarks](https://agentmemo.dev/benchmarks) · [Playground](https://agentmemo.dev/playground) · [Status](https://agentmemo.dev/status) · [Manifesto](https://agentmemo.dev/manifesto)
+
+## License
+
+Apache-2.0.
+
+## Built by
+
+**Dr. Nadeem Shaikh** — Nanded, Maharashtra, India 🇮🇳. For every AI agent on earth.
