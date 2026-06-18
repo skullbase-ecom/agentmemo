@@ -163,17 +163,17 @@ export const AGENT_PAYMENTS_HTML = shell({
   product_id: <span class="s">"pdt_0NhKvw8RSLuiPu2bD2IQH"</span>,
   quantity: <span class="m">1</span>,
   metadata: {
-    agentmemo_api_key: <span class="p">YOUR_AGENTMEMO_API_KEY</span>
+    agentmemo_key_id: <span class="p">YOUR_PUBLIC_KEY_ID</span>
   }
 });
 
 console.<span class="f">log</span>(<span class="s">"Subscribed:"</span>, subscription.id);</pre></div>
   <div class="card" style="border-left:3px solid var(--accent-2);margin-top:8px">
-    <p class="muted">Including your AgentMemo API key in <code>metadata</code> ensures automatic Pro upgrade even without an email address — perfect for fully autonomous agents.</p>
+    <p class="muted">Pass your <b style="color:var(--text)">public key ID</b> (<code>am_pk_xxx</code>), never your secret key (<code>am_sk_xxx</code>). Your secret stays on your side only. This also enables automatic Pro upgrade without an email address — perfect for fully autonomous agents.</p>
   </div>
 
   <h2>Step 4 — Webhook auto-upgrades AgentMemo</h2>
-  <p>Dodo fires a signed webhook to <code>agentmemo.dev/webhooks/dodo</code>. AgentMemo reads <code>metadata.agentmemo_api_key</code>, matches it to your key, and upgrades it to <b>Pro</b> automatically (falling back to customer email if no metadata key is present). The agent now has unlimited memory operations — its very next <code>/memory/store</code> call already runs on Pro.</p>
+  <p>Dodo fires a signed webhook to <code>agentmemo.dev/webhooks/dodo</code>. AgentMemo reads <code>metadata.agentmemo_key_id</code>, matches it to your key, and upgrades it to <b>Pro</b> automatically (falling back to customer email if no metadata key id is present). The agent now has unlimited memory operations — its very next <code>/memory/store</code> call already runs on Pro.</p>
 
   <div class="card" style="border-left:3px solid var(--accent);margin-top:24px">
     <strong style="color:var(--text)">No human needed — agents upgrade themselves.</strong>
