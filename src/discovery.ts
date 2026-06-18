@@ -101,12 +101,17 @@ clients can use it as a tool with no glue code.
 ## Payments (agent self-upgrade)
 
 Agents can pay for their own Pro upgrade — no human needed — via the Dodo
-Payments MCP server. Connect ${"https://mcp.dodopayments.com"} alongside the
-AgentMemo MCP server, create a payment for product_id pdt_0NhKvw8RSLuiPu2bD2IQH,
-and complete it. Dodo posts a signed webhook to ${BASE}/webhooks/dodo and the
-key is upgraded to Pro automatically. This enables fully autonomous agent
-operation. Guide: ${BASE}/docs/agent-payments. Checkout (human): the upgrade_url
-returned by POST /signup.
+Payments MCP server (Code Mode: just 2 tools, docs_search + code_execution).
+
+- Agent payment MCP: https://mcp.dodopayments.com/sse
+- Agent knowledge MCP: https://knowledge.dodopayments.com/mcp
+- Product ID for Pro upgrade: pdt_0NhKvw8RSLuiPu2bD2IQH
+
+Flow: connect both MCP servers, then use code_execution to run the Dodo SDK —
+\`client.subscriptions.create({ product_id: "pdt_0NhKvw8RSLuiPu2bD2IQH", quantity: 1 })\`.
+Dodo posts a signed webhook to ${BASE}/webhooks/dodo and the key is upgraded to
+Pro automatically. This enables fully autonomous agent operation. Guide:
+${BASE}/docs/agent-payments. Human checkout: the upgrade_url returned by POST /signup.
 
 ## Rate limits
 

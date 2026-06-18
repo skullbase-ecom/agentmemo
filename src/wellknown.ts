@@ -164,12 +164,14 @@ existing keys keep working.
 ## Payments — agents upgrade themselves
 
 Agents can self-upgrade to Pro with no human in the loop via the Dodo Payments
-MCP server:
+MCP server (Code Mode — just 2 tools: docs_search + code_execution):
 
-- Dodo MCP: \`https://mcp.dodopayments.com\`
+- Agent payment MCP: \`https://mcp.dodopayments.com/sse\`
+- Agent knowledge MCP: \`https://knowledge.dodopayments.com/mcp\`
 - Product ID: \`pdt_0NhKvw8RSLuiPu2bD2IQH\`
-- Flow: connect the Dodo MCP server, create + complete a payment for the product,
-  and Dodo posts a signed webhook to \`https://agentmemo.dev/webhooks/dodo\` which
+- Flow: connect both MCP servers, then run via code_execution:
+  \`client.subscriptions.create({ product_id: "pdt_0NhKvw8RSLuiPu2bD2IQH", quantity: 1 })\`.
+  Dodo posts a signed webhook to \`https://agentmemo.dev/webhooks/dodo\` which
   upgrades your key to the \`pro\` tier automatically.
 - Guide: https://agentmemo.dev/docs/agent-payments
 - Human checkout link is also returned as \`upgrade_url\` from POST /signup.

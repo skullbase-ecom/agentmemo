@@ -102,57 +102,72 @@ document.getElementById('tested').textContent='Measured '+new Date().toUTCString
 // ---- /docs/agent-payments ----------------------------------------------
 export const AGENT_PAYMENTS_HTML = shell({
   title: "Agent Payments — AgentMemo",
-  description: "Agents upgrade themselves to Pro programmatically via the Dodo Payments MCP server. No human needed.",
+  description: "Agents upgrade themselves to Pro programmatically via the Dodo Payments MCP server (Code Mode). No human needed.",
   path: "/docs/agent-payments",
   ogType: "article",
   body: `${PAGE_CSS}
 <div class="hd wrap"><h1>Agents pay for <span class="accent-text">themselves</span>.</h1><p>An autonomous agent can hit its free-tier ceiling, purchase a Pro upgrade, and keep working — with no human in the loop — using the Dodo Payments MCP server.</p></div>
 <section class="section"><div class="wrap prose">
-  <h2>The idea</h2>
-  <p>When an agent registers via <code>POST /signup</code>, the response includes an <code>upgrade_via_mcp</code> block. The agent can act on it directly: connect to the Dodo Payments MCP server, create a checkout/payment for the AgentMemo Pro product, and complete it from its own funding source. Dodo then notifies AgentMemo and the agent's key is upgraded to Pro automatically.</p>
+  <div class="card" style="border-left:3px solid var(--accent);margin-bottom:8px">
+    <strong style="color:var(--text)">Dodo Payments Code Mode.</strong>
+    <p class="muted" style="margin-top:6px">Instead of exposing hundreds of API endpoints as separate tools, Dodo uses just <b style="color:var(--text)">2 tools</b> — keeping the agent's context window lean and execution fast:</p>
+    <ul>
+      <li><code>docs_search</code> — searches Dodo documentation.</li>
+      <li><code>code_execution</code> — writes + runs TypeScript in a sandbox against the Dodo SDK.</li>
+    </ul>
+  </div>
 
-  <h2>1. Discover the upgrade path (from /signup)</h2>
-  <div class="codewin"><div class="codebar"><span class="lbl">POST /signup → response</span></div>
+  <h2>Step 1 — Agent connects the Dodo MCP servers</h2>
+  <p>Add Dodo's knowledge + payments MCP servers to the agent's MCP config (alongside AgentMemo's memory server).</p>
+  <div class="codewin"><div class="codebar"><span class="lbl">mcp config</span></div>
 <pre class="code">{
-  <span class="p">"api_key"</span>: <span class="s">"am_sk_..."</span>,
+  <span class="p">"mcpServers"</span>: {
+    <span class="p">"dodo-knowledge"</span>: {
+      <span class="p">"command"</span>: <span class="s">"npx"</span>,
+      <span class="p">"args"</span>: [<span class="s">"-y"</span>, <span class="s">"mcp-remote@latest"</span>,
+               <span class="s">"https://knowledge.dodopayments.com/mcp"</span>]
+    },
+    <span class="p">"dodopayments"</span>: {
+      <span class="p">"command"</span>: <span class="s">"npx"</span>,
+      <span class="p">"args"</span>: [<span class="s">"-y"</span>, <span class="s">"mcp-remote@latest"</span>,
+               <span class="s">"https://mcp.dodopayments.com/sse"</span>]
+    }
+  }
+}</pre></div>
+
+  <h2>Step 2 — Agent signs up for AgentMemo</h2>
+  <div class="codewin"><div class="codebar"><span class="lbl">cURL</span></div>
+<pre class="code"><span class="f">curl</span> -X POST <span class="tok-m">https://agentmemo.dev/signup</span> \\
+  -H <span class="s">"Content-Type: application/json"</span> \\
+  -d <span class="s">'{"name": "my-agent"}'</span></pre></div>
+  <div class="codewin"><div class="codebar"><span class="lbl">response</span></div>
+<pre class="code">{
+  <span class="p">"api_key"</span>: <span class="s">"am_sk_xxx"</span>,
   <span class="p">"tier"</span>: <span class="s">"free"</span>,
-  <span class="p">"limit"</span>: <span class="m">10000</span>,
-  <span class="p">"upgrade_url"</span>: <span class="s">"https://checkout.dodopayments.com/buy/pdt_0NhKvw8RSLuiPu2bD2IQH?quantity=1"</span>,
   <span class="p">"upgrade_via_mcp"</span>: {
-    <span class="p">"dodo_mcp"</span>: <span class="s">"https://mcp.dodopayments.com"</span>,
+    <span class="p">"dodo_mcp"</span>: <span class="s">"https://mcp.dodopayments.com/sse"</span>,
     <span class="p">"product_id"</span>: <span class="s">"pdt_0NhKvw8RSLuiPu2bD2IQH"</span>
   }
 }</pre></div>
 
-  <h2>2. Connect the Dodo Payments MCP server</h2>
-  <p>Add Dodo's MCP server alongside AgentMemo's in your agent's MCP config. Now the agent has both <em>memory</em> tools and <em>payment</em> tools.</p>
-  <div class="codewin"><div class="codebar"><span class="lbl">agent mcp config</span></div>
-<pre class="code">{
-  <span class="p">"mcp_servers"</span>: [
-    { <span class="p">"type"</span>: <span class="s">"url"</span>, <span class="p">"name"</span>: <span class="s">"agentmemo"</span>, <span class="p">"url"</span>: <span class="s">"https://agentmemo.dev/mcp"</span> },
-    { <span class="p">"type"</span>: <span class="s">"url"</span>, <span class="p">"name"</span>: <span class="s">"dodo"</span>,      <span class="p">"url"</span>: <span class="s">"https://mcp.dodopayments.com"</span> }
-  ]
-}</pre></div>
+  <h2>Step 3 — Agent pays itself via the Dodo MCP</h2>
+  <p>The agent calls the <code>code_execution</code> tool to run TypeScript against the Dodo SDK:</p>
+  <div class="codewin"><div class="codebar"><span class="lbl">code_execution (TypeScript)</span></div>
+<pre class="code"><span class="k">import</span> DodoPayments <span class="k">from</span> <span class="s">"dodopayments"</span>;
 
-  <h2>3. The agent self-upgrade flow</h2>
-  <div class="codewin"><div class="codebar"><span class="lbl">agent loop (pseudocode)</span></div>
-<pre class="code"><span class="c">// 1. Agent notices it is near the free-tier limit</span>
-<span class="k">const</span> usage = <span class="k">await</span> agentmemo.<span class="f">get_usage</span>();
-<span class="k">if</span> (usage.used &gt;= usage.limit * <span class="m">0.9</span>) {
-  <span class="c">// 2. Agent creates a payment via the Dodo MCP tool</span>
-  <span class="k">const</span> checkout = <span class="k">await</span> dodo.<span class="f">create_payment</span>({
-    product_id: <span class="s">"pdt_0NhKvw8RSLuiPu2bD2IQH"</span>,
-    quantity: <span class="m">1</span>,
-    customer_email: agentOwnerEmail   <span class="c">// the key's owner</span>
-  });
-  <span class="c">// 3. Agent completes payment from its own funding source</span>
-  <span class="k">await</span> dodo.<span class="f">complete_payment</span>(checkout.payment_id);
-}
-<span class="c">// 4. Dodo fires a webhook to AgentMemo → key upgraded to Pro automatically</span>
-<span class="c">//    (POST https://agentmemo.dev/webhooks/dodo, signature-verified)</span></pre></div>
+<span class="k">const</span> client = <span class="k">new</span> <span class="f">DodoPayments</span>({
+  bearerToken: process.env.<span class="p">DODO_PAYMENTS_API_KEY</span>
+});
 
-  <h2>4. Upgrade lands automatically</h2>
-  <p>On a successful payment, Dodo posts a signed webhook to <code>https://agentmemo.dev/webhooks/dodo</code>. AgentMemo verifies it and flips the matching key (by customer email) to the <code>pro</code> tier — unlimited, no caps. The agent's very next <code>/memory/store</code> call already runs on Pro.</p>
+<span class="k">const</span> subscription = <span class="k">await</span> client.subscriptions.<span class="f">create</span>({
+  product_id: <span class="s">"pdt_0NhKvw8RSLuiPu2bD2IQH"</span>,
+  quantity: <span class="m">1</span>
+});
+
+console.<span class="f">log</span>(<span class="s">"Subscribed:"</span>, subscription.id);</pre></div>
+
+  <h2>Step 4 — Webhook auto-upgrades AgentMemo</h2>
+  <p>Dodo fires a signed webhook to <code>agentmemo.dev/webhooks/dodo</code>. AgentMemo verifies it and upgrades the <code>api_key</code> to <b>Pro</b> automatically. The agent now has unlimited memory operations — its very next <code>/memory/store</code> call already runs on Pro.</p>
 
   <div class="card" style="border-left:3px solid var(--accent);margin-top:24px">
     <strong style="color:var(--text)">No human needed — agents upgrade themselves.</strong>

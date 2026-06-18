@@ -69,7 +69,8 @@ signup.post("/", async (c) => {
       upgrade_url: "https://checkout.dodopayments.com/buy/pdt_0NhKvw8RSLuiPu2bD2IQH?quantity=1",
       upgrade_via_mcp: {
         description: "Agents can upgrade programmatically via Dodo Payments MCP",
-        dodo_mcp: "https://mcp.dodopayments.com",
+        dodo_mcp: "https://mcp.dodopayments.com/sse",
+        dodo_knowledge_mcp: "https://knowledge.dodopayments.com/mcp",
         product_id: "pdt_0NhKvw8RSLuiPu2bD2IQH",
         docs: "https://agentmemo.dev/docs/agent-payments",
       },
