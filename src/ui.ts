@@ -99,7 +99,7 @@ export function footer(): string {
       <div class="tag">Memory for the agentic web.</div>
     </div>
     <div><h4>Product</h4><a href="/docs">Docs</a><a href="/pricing">Pricing</a><a href="/changelog">Changelog</a><a href="/status">Status</a><a href="/benchmarks">Benchmarks</a><a href="/observatory">Observatory</a></div>
-    <div><h4>Developers</h4><a href="/docs">API Reference</a><a href="/docs#mcp">MCP Server</a><a href="/openapi.json">OpenAPI</a><a href="/sdk">SDKs</a><a href="/playground">Playground</a></div>
+    <div><h4>Developers</h4><a href="/docs">API Reference</a><a href="/docs#mcp">MCP Server</a><a href="/api-explorer">OpenAPI</a><a href="/sdk">SDKs</a><a href="/playground">Playground</a></div>
     <div><h4>Security</h4><a href="/security">Security</a><a href="/security#audit">Audit Trail</a><a href="/security#owasp">OWASP ASI06</a><a href="/security#gdpr">GDPR</a></div>
     <div><h4>Discover</h4><a href="/auth.md">auth.md</a><a href="/llms.txt">llms.txt</a><a href="/agent-card.json">agent-card.json</a><a href="/humans.txt">humans.txt</a><a href="/manifesto">Manifesto</a></div>
   </div>

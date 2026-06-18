@@ -241,6 +241,7 @@ export const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${BASE}/blog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/use-cases</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/sdk</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>${BASE}/api-explorer</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/changelog</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>${BASE}/status</loc><changefreq>always</changefreq><priority>0.5</priority></url>
   <url><loc>${BASE}/observatory</loc><changefreq>always</changefreq><priority>0.6</priority></url>

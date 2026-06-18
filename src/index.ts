@@ -40,7 +40,7 @@ import {
 } from "./discovery";
 import { MCP_MANIFEST, handleMcpRpc, type ApiCaller } from "./mcp";
 import { PROTECTED_RESOURCE_METADATA, AUTHORIZATION_SERVER_METADATA } from "./oauth-metadata";
-import { OPENAPI, API_CATALOG, AGENT_SKILLS, MCP_SERVER_CARD } from "./openapi";
+import { OPENAPI, API_CATALOG, AGENT_SKILLS, MCP_SERVER_CARD, API_EXPLORER_HTML } from "./openapi";
 import { SDK_JS, SDK_PY } from "./sdk";
 import { STATUS_HTML, runStatusChecks } from "./status";
 import { OBSERVATORY_HTML, runObservatory } from "./observatory";
@@ -230,7 +230,14 @@ const jsonRoute = (obj: unknown) => (c: AppContext) => {
   c.header("cache-control", "public, max-age=3600");
   return c.json(obj as object);
 };
-app.get("/openapi.json", jsonRoute(OPENAPI));
+app.get("/openapi.json", (c) => {
+  c.header("content-type", "application/json; charset=utf-8");
+  c.header("x-content-type-options", "nosniff");
+  c.header("cache-control", "public, max-age=3600");
+  return c.body(JSON.stringify(OPENAPI));
+});
+// Human-readable API explorer.
+app.get("/api-explorer", htmlRoute(API_EXPLORER_HTML));
 app.get("/.well-known/api-catalog", (c) => {
   c.header("content-type", "application/linkset+json");
   c.header("cache-control", "public, max-age=3600");

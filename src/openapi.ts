@@ -1,3 +1,5 @@
+import { shell } from "./ui";
+
 // Machine-readable API discovery documents (Section 5 — agent readiness).
 //   GET /openapi.json                          OpenAPI 3.0 spec
 //   GET /.well-known/api-catalog               RFC 9727 linkset
@@ -121,3 +123,70 @@ export const MCP_SERVER_CARD = {
     { name: "get_usage", description: "Usage for the calling key." },
   ],
 };
+
+// ---- Human-readable API explorer (/api-explorer) ------------------------
+function explorerCategory(path: string): string {
+  if (path.startsWith("/memory")) return "Memory";
+  if (path.startsWith("/agents")) return "Agents";
+  if (path.startsWith("/analytics")) return "Analytics";
+  if (path.startsWith("/users")) return "Security & GDPR";
+  if (path.startsWith("/webhooks")) return "Webhooks";
+  if (path.startsWith("/mcp")) return "Discovery";
+  return "Auth & Account";
+}
+const EXPLORER_ORDER = ["Memory", "Agents", "Analytics", "Auth & Account", "Security & GDPR", "Discovery", "Webhooks"];
+
+function buildExplorer(): string {
+  const groups: Record<string, { method: string; path: string; summary: string }[]> = {};
+  for (const [path, opsRaw] of Object.entries(OPENAPI.paths as Record<string, Record<string, { summary?: string }>>)) {
+    for (const m of ["get", "post", "delete", "put", "patch"]) {
+      const op = opsRaw[m];
+      if (!op) continue;
+      const cat = explorerCategory(path);
+      (groups[cat] ||= []).push({ method: m.toUpperCase(), path, summary: op.summary ?? "" });
+    }
+  }
+  return EXPLORER_ORDER.filter((c) => groups[c])
+    .map((c) => {
+      const rows = groups[c]
+        .map(
+          (r) =>
+            `<div class="ep"><span class="mb ${r.method}">${r.method}</span><span class="ep-path">${r.path}</span><span class="ep-sum">${r.summary}</span></div>`,
+        )
+        .join("");
+      return `<details open><summary>${c} <span class="cnt">${groups[c].length}</span></summary>${rows}</details>`;
+    })
+    .join("");
+}
+
+const EXPLORER_STYLE = `<style>
+.exh{padding:56px 0 8px;text-align:center}
+.exh h1{font-size:clamp(2rem,5vw,3rem);font-weight:800}
+.exh p{color:var(--text-2);margin-top:12px}
+.exwrap{max-width:880px;margin:32px auto 0;padding:0 24px}
+details{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
+summary{padding:14px 18px;font-weight:600;color:var(--text);cursor:pointer;font-size:15px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▸";color:var(--accent);margin-right:10px;display:inline-block;transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+.cnt{color:var(--text-muted);font-weight:500;font-size:13px}
+.ep{display:flex;align-items:center;gap:14px;padding:11px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
+.mb{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;min-width:62px;text-align:center}
+.mb.GET{background:#22c55e;color:#000}
+.mb.POST{background:#8b5cf6;color:#fff}
+.mb.DELETE{background:#ef4444;color:#fff}
+.mb.PUT,.mb.PATCH{background:#f59e0b;color:#000}
+.ep-path{font-family:var(--mono);color:var(--text);font-size:13.5px}
+.ep-sum{color:var(--text-2);font-size:13px;flex:1;min-width:200px}
+.exnote{max-width:880px;margin:24px auto 0;padding:0 24px;color:var(--text-muted);font-size:13px}
+</style>`;
+
+export const API_EXPLORER_HTML = shell({
+  title: "API Explorer — AgentMemo",
+  description: "Browse the full AgentMemo API — every endpoint, organized by category, in a clean human-readable view.",
+  path: "/api-explorer",
+  body: `${EXPLORER_STYLE}
+<div class="exh"><span class="eyebrow">Reference</span><h1>API <span class="accent-text">Explorer</span></h1><p>Every endpoint, organized by category. Machine-readable spec at <a href="/openapi.json">/openapi.json</a>.</p></div>
+<div class="exwrap">${buildExplorer()}</div>
+<p class="exnote">Authenticate with <span class="mono">Authorization: Bearer am_sk_...</span>. Full docs at <a href="/docs">/docs</a>.</p>`,
+});
