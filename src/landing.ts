@@ -24,10 +24,26 @@ h1.hero-h{font-size:clamp(3rem,8vw,7rem);font-weight:800;letter-spacing:-.03em;l
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}
 .feat .ico{font-size:22px;margin-bottom:12px}
 .feat h3{font-size:17px;margin-bottom:6px}.feat p{color:var(--text-2);font-size:14px}
-table.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:24px}
-table.cmp th,table.cmp td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left}
-table.cmp th{color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-table.cmp td.am{color:var(--text);font-weight:600}
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:24px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden}
+table.cmp th,table.cmp td{padding:14px 20px;border:1px solid #2a2a2a;text-align:left}
+table.cmp thead th{background:#1a1a1a;color:#ffffff;font-weight:700}
+table.cmp tbody tr:nth-child(odd){background:#0f0f0f}
+table.cmp tbody tr:nth-child(even){background:#141414}
+table.cmp tbody td{color:#f5f5f5;font-weight:500}
+table.cmp tbody td:first-child{color:#f5f5f5;font-weight:500}
+table.cmp td.am{color:#ffffff;font-weight:700}
+table.cmp .y{color:#22c55e;font-weight:700;font-size:1.1rem}
+table.cmp .n{color:#ef4444;font-weight:700;font-size:1.1rem}
+/* discovery bar */
+.discovery-bar{text-align:center;padding:24px 0 8px;border-top:1px solid #1f1f1f;margin-top:24px}
+.discovery-label{color:#404040;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.discovery-names{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.dname{color:#737373;font-size:.95rem;font-weight:500;letter-spacing:.02em;opacity:0;animation:fadeIn .5s ease forwards;animation-delay:calc(var(--i) * 400ms + 800ms);transition:color .3s}
+.dname:hover{color:#8b5cf6}
+.dsep{color:#2a2a2a;opacity:0;animation:fadeIn .5s ease forwards;animation-delay:calc(var(--i,0) * 400ms + 1000ms)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{color:#737373}50%{color:#8b5cf6}}
+.dname.pulsed{animation:pulse 2s ease 3s 2}
 .tabs{display:flex;gap:6px;margin-bottom:14px}
 .tab{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-2);font-size:13px;cursor:pointer}
 .tab.active{border-color:var(--accent);color:var(--text)}
@@ -58,6 +74,16 @@ const body = `${STYLE}
       <div><div class="v" id="m-agents">—</div><div class="lbl">active agents</div></div>
       <div><div class="v" id="m-up">99.9%</div><div class="lbl">uptime</div></div>
       <div><div class="v" id="m-lat">&lt;45ms</div><div class="lbl">avg response</div></div>
+    </div>
+    <div class="discovery-bar">
+      <p class="discovery-label">Discovered on day one by</p>
+      <div class="discovery-names">
+        <span class="dname" style="--i:0">Anthropic</span><span class="dsep" style="--i:0">·</span>
+        <span class="dname" style="--i:1">OpenAI</span><span class="dsep" style="--i:1">·</span>
+        <span class="dname" style="--i:2">Google</span><span class="dsep" style="--i:2">·</span>
+        <span class="dname" style="--i:3">Microsoft</span><span class="dsep" style="--i:3">·</span>
+        <span class="dname" style="--i:4">Apple</span>
+      </div>
     </div>
   </div>
 </header>
@@ -140,16 +166,18 @@ hits = m.<span class="f">search</span>(user_id=<span class="s">"u1"</span>, quer
 <section class="section" id="compare"><div class="wrap">
   <div class="sec-title"><span class="eyebrow">Comparison</span><h2>How AgentMemo compares</h2></div>
   <table class="cmp">
-    <tr><th>Feature</th><th>AgentMemo</th><th>Mem0</th><th>Zep</th></tr>
-    <tr><td>Edge deployment</td><td class="am">✅</td><td>❌</td><td>❌</td></tr>
-    <tr><td>MCP native</td><td class="am">✅</td><td>❌</td><td>❌</td></tr>
-    <tr><td>auth.md support</td><td class="am">✅</td><td>❌</td><td>❌</td></tr>
-    <tr><td>OWASP ASI06 protection</td><td class="am">✅</td><td>❌</td><td>❌</td></tr>
-    <tr><td>Full audit trail</td><td class="am">✅</td><td>❌</td><td>❌</td></tr>
-    <tr><td>Free tier</td><td class="am">✅ unlimited (beta)</td><td>✅ limited</td><td>❌</td></tr>
-    <tr><td>Graph memory</td><td>✅ basic</td><td>paid</td><td>✅</td></tr>
-    <tr><td>Temporal knowledge graph</td><td>roadmap</td><td>❌</td><td>✅</td></tr>
-    <tr><td>Open source</td><td class="am">✅</td><td>✅</td><td>partial</td></tr>
+    <thead><tr><th>Feature</th><th>AgentMemo</th><th>Mem0</th><th>Zep</th></tr></thead>
+    <tbody>
+    <tr><td>Edge deployment</td><td class="am"><span class="y">✅</span></td><td><span class="n">❌</span></td><td><span class="n">❌</span></td></tr>
+    <tr><td>MCP native</td><td class="am"><span class="y">✅</span></td><td><span class="n">❌</span></td><td><span class="n">❌</span></td></tr>
+    <tr><td>auth.md support</td><td class="am"><span class="y">✅</span></td><td><span class="n">❌</span></td><td><span class="n">❌</span></td></tr>
+    <tr><td>OWASP ASI06 protection</td><td class="am"><span class="y">✅</span></td><td><span class="n">❌</span></td><td><span class="n">❌</span></td></tr>
+    <tr><td>Full audit trail</td><td class="am"><span class="y">✅</span></td><td><span class="n">❌</span></td><td><span class="n">❌</span></td></tr>
+    <tr><td>Free tier</td><td class="am"><span class="y">✅</span> unlimited (beta)</td><td><span class="y">✅</span> limited</td><td><span class="n">❌</span></td></tr>
+    <tr><td>Graph memory</td><td><span class="y">✅</span> basic</td><td>paid</td><td><span class="y">✅</span></td></tr>
+    <tr><td>Temporal knowledge graph</td><td>roadmap</td><td><span class="n">❌</span></td><td><span class="y">✅</span></td></tr>
+    <tr><td>Open source</td><td class="am"><span class="y">✅</span></td><td><span class="y">✅</span></td><td>partial</td></tr>
+    </tbody>
   </table>
 </div></section>
 
@@ -176,6 +204,8 @@ document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){
   ['curl','js','py'].forEach(function(k){document.getElementById('cb-'+k).style.display=k===t.dataset.t?'block':'none'});
   document.getElementById('cfn').textContent={curl:'store.sh',js:'agent.js',py:'agent.py'}[t.dataset.t];
 }});
+// discovery pulse after names appear
+setTimeout(function(){document.querySelectorAll('.dname').forEach(function(el){el.classList.add('pulsed')})},3000);
 // live metrics
 (async function(){try{
   var o=await (await fetch('/observatory.json')).json();
