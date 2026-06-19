@@ -82,6 +82,7 @@ const body = `${STYLE}
     <div class="metrics" id="metrics">
       <div><div class="v" id="m-mem">—</div><div class="lbl">memories stored</div></div>
       <div><div class="v" id="m-agents">—</div><div class="lbl">active agents</div></div>
+      <div><div class="v" id="m-sign">—</div><div class="lbl">signups</div></div>
       <div><div class="v" id="m-up">99.9%</div><div class="lbl">uptime</div></div>
       <div><div class="v" id="m-lat">&lt;45ms</div><div class="lbl">avg response</div></div>
     </div>
@@ -214,9 +215,9 @@ document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){
 }});
 // live metrics
 (async function(){try{
-  var o=await (await fetch('/observatory.json')).json();
-  function up(id,to){var el=document.getElementById(id),n=0,step=Math.max(1,Math.ceil(to/40));var iv=setInterval(function(){n+=step;if(n>=to){n=to;clearInterval(iv)}el.textContent=n.toLocaleString()},20)}
-  up('m-mem',o.totals.memories||0);up('m-agents',o.totals.active_agents||0);
+  var o=await (await fetch('/observatory.json',{cache:'no-store'})).json();
+  function up(id,to){var el=document.getElementById(id);if(!el)return;var n=0,step=Math.max(1,Math.ceil(to/40));var iv=setInterval(function(){n+=step;if(n>=to){n=to;clearInterval(iv)}el.textContent=n.toLocaleString()},20)}
+  up('m-mem',o.total_memories||0);up('m-agents',o.active_agents||0);up('m-sign',o.total_signups||0);
 }catch(e){}})();
 // particles
 (function(){var cv=document.getElementById('particles');if(!cv)return;var ctx=cv.getContext('2d'),P=[],W,H;

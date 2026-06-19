@@ -9,6 +9,10 @@ import { shell } from "./ui";
 export interface ObservatoryReport {
   generated_at: number;
   privacy: string;
+  // Flat headline metrics consumed by the landing-page metrics bar.
+  total_memories: number;
+  active_agents: number;
+  total_signups: number;
   totals: {
     memories: number;
     episodes: number;
@@ -40,13 +44,15 @@ export async function runObservatory(env: Env, now: number): Promise<Observatory
     new Date(now).getUTCDate(),
   );
 
-  const [memories, episodes, procedures, emotional, agents, today] = await Promise.all([
+  const [memories, episodes, procedures, emotional, agents, today, signups, active24h] = await Promise.all([
     count(env, "SELECT COUNT(*) AS n FROM memories"),
     count(env, "SELECT COUNT(*) AS n FROM episodes"),
     count(env, "SELECT COUNT(*) AS n FROM procedures"),
     count(env, "SELECT COUNT(*) AS n FROM emotional_memories"),
     count(env, "SELECT COUNT(DISTINCT agent_id) AS n FROM memories"),
     count(env, `SELECT COUNT(*) AS n FROM memories WHERE created_at >= ${startOfDay}`),
+    count(env, "SELECT COUNT(*) AS n FROM api_keys WHERE revoked = 0"),
+    count(env, `SELECT COUNT(DISTINCT agent_id) AS n FROM memories WHERE created_at > ${now - 86_400_000}`),
   ]);
 
   const { results: sample } = await env.DB.prepare(
@@ -68,6 +74,9 @@ export async function runObservatory(env: Env, now: number): Promise<Observatory
   const report: ObservatoryReport = {
     generated_at: now,
     privacy: "Aggregated and anonymized. No memory content, user ids, agent ids, or API keys are exposed.",
+    total_memories: memories,
+    active_agents: active24h,
+    total_signups: signups,
     totals: { memories, episodes, procedures, emotional_memories: emotional, active_agents: agents, memories_today: today },
     memory_type_distribution: { semantic: memories, episodic: episodes, procedural: procedures, emotional: emotional },
     categories,
