@@ -38,12 +38,12 @@ function esc(s: unknown): string {
 }
 
 const CAT_COLORS: Record<string, string> = {
-  user_preference: "#8b5cf6", preferences: "#8b5cf6", operational: "#06b6d4",
-  factual: "#22c55e", facts: "#22c55e", procedural: "#f59e0b", emotional: "#ef4444",
-  people: "#a78bfa", tasks: "#14b8a6", events: "#eab308", technical: "#3b82f6",
-  commerce: "#ec4899", location: "#10b981", health: "#f43f5e", other: "#52525b",
+  user_preference: "#00ff88", preferences: "#00ff88", operational: "#0099ff",
+  factual: "#ffaa00", facts: "#ffaa00", procedural: "#8b5cf6", emotional: "#ff69b4",
+  people: "#ff69b4", tasks: "#00ff88", events: "#ffaa00", technical: "#0099ff",
+  commerce: "#ec4899", location: "#00ff88", health: "#ff4444", other: "#888888",
 };
-const catColor = (c: string) => CAT_COLORS[c] ?? "#52525b";
+const catColor = (c: string) => CAT_COLORS[c] ?? "#888888";
 
 // 7-day daily counts (fills gaps with 0).
 async function dailySeries(env: Env, now: number): Promise<number[]> {
@@ -71,91 +71,124 @@ const NAVS: [string, string][] = [
   ["/security", "Security"], ["/patterns", "Patterns"], ["/logs", "Logs"], ["/settings", "Settings"],
 ];
 const MOBILE: [string, string][] = [["/", "Brief"], ["/agents", "Agents"], ["/memories", "Mem"], ["/security", "Sec"], ["/settings", "More"]];
+// Per-section accent for the active sidebar item (neon coding aesthetic).
+const NAV_C: Record<string, string> = {
+  "/": "#8b5cf6", "/agents": "#00ff88", "/memories": "#0099ff", "/revenue": "#ffaa00",
+  "/security": "#ff4444", "/patterns": "#ff69b4", "/logs": "#888888", "/settings": "#888888",
+};
 
 const ADMIN_CSS = `
-:root{--bg:#050505;--panel:#0f0f0f;--card:#141414;--bd:#1f1f1f;--bd2:#2a2a2a;--tx:#f5f5f5;--tx2:#a1a1aa;--tx3:#71717a;--ac:#8b5cf6;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--mono:'JetBrains Mono',ui-monospace,monospace;--sans:'Inter',system-ui,sans-serif}
+:root{--bg:#050505;--panel:#0d0d0d;--card:#111111;--bd:#222222;--bd2:#2a2a2a;--tx:#ffffff;--tx2:#e0e0e0;--tx3:#888888;--tx4:#555555;--ac:#8b5cf6;--ok:#00ff88;--warn:#ffaa00;--err:#ff4444;--blue:#0099ff;--pink:#ff69b4;--active-bg:#1a1040;--hover:#1a1a1a;--track:#0a0a0a;--row-alt:#0d0d0d;--mono:'JetBrains Mono',ui-monospace,monospace;--sans:'Inter',system-ui,sans-serif}
+[data-theme=light]{--bg:#ffffff;--panel:#f8f8f8;--card:#f8f8f8;--bd:#e5e5e5;--bd2:#d4d4d4;--tx:#0a0a0a;--tx2:#525252;--tx3:#737373;--tx4:#8a8a8a;--active-bg:#ede9fe;--hover:#f0f0f0;--track:#e5e5e5;--row-alt:#f0f0f0}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx2);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--tx2);font-family:var(--sans);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s}
 a{color:inherit;text-decoration:none}
 .layout{display:flex;min-height:100vh}
-.side{width:200px;flex-shrink:0;border-right:1px solid var(--bd);padding:24px 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.side{width:200px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--bd);padding:24px 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
 .side .logo{padding:0 22px 22px;font-weight:700;color:var(--tx);font-size:16px}
 .side .logo b{color:var(--ac)}
-.side a{display:block;padding:9px 22px;color:var(--tx3);font-size:14px}
-.side a:hover{color:var(--tx)}
-.side a.on{color:var(--tx);border-left:2px solid var(--ac);padding-left:20px}
+.side a{display:block;padding:9px 19px;color:var(--tx3);font-size:14px;border-left:3px solid transparent;transition:.2s}
+.side a:hover{color:var(--tx);background:var(--hover)}
+.side a.on{color:var(--na,var(--ac));background:var(--active-bg);border-left:3px solid var(--na,var(--ac));font-weight:600}
 .side .sp{flex:1}
 .side .ft{padding:14px 22px 0;border-top:1px solid var(--bd);font-size:13px}
 .side .ft a{padding:6px 0;color:var(--tx3)}
+.topbar{position:fixed;top:14px;right:18px;display:flex;align-items:center;gap:14px;z-index:60}
+.topbar .lg{font-size:13px;font-weight:600;color:var(--tx3)}
+.topbar .lg:hover{color:var(--err)}
+.theme-tg{width:34px;height:34px;border-radius:9px;border:1px solid var(--bd);background:var(--card);color:var(--tx2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s}
+.theme-tg:hover{border-color:var(--ac);color:var(--ac)}
+.theme-tg svg{width:17px;height:17px}
+.ic-sun{display:none}.ic-moon{display:block}
+[data-theme=light] .ic-moon{display:none}[data-theme=light] .ic-sun{display:block}
 .main{flex:1;min-width:0;padding:36px 40px 90px}
-h1{color:var(--tx);font-size:24px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+h1{color:var(--tx);font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
 .sub{color:var(--tx3);font-size:14px;margin-bottom:28px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:22px;margin-bottom:16px}
-.headline{background:linear-gradient(180deg,#141414,#0d0d0d);border:1px solid var(--bd);border-radius:14px;padding:26px;font-size:18px;line-height:1.6;color:var(--tx);margin-bottom:26px}
+.headline{background:linear-gradient(180deg,var(--card),var(--bg));border:1px solid var(--bd);border-radius:14px;padding:26px;font-size:18px;line-height:1.6;color:var(--tx);margin-bottom:26px}
 .pulse{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
 .pcell{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px}
-.pcell .n{font-size:32px;font-weight:800;color:var(--tx);letter-spacing:-.02em}
-.pcell .l{color:var(--tx3);font-size:12px;margin-top:2px}
+.pcell .n{font-size:2rem;font-weight:800;color:var(--tx);letter-spacing:-.02em}
+.pcell .l{color:var(--tx3);font-size:11px;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
 .spark{width:100%;height:24px;margin-top:10px;display:block}
 .spark-empty{color:var(--tx3);font-size:11px}
+.story .card{border-left:3px solid var(--ac)}
 .story .card h3{color:var(--tx);font-size:15px;margin-bottom:10px}
-.story .card p{font-size:14px;line-height:1.6;margin-bottom:14px}
+.story .card p{font-size:14px;line-height:1.6;color:var(--tx2);margin-bottom:14px}
 .btn{display:inline-block;background:var(--ac);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:0;cursor:pointer;margin-right:8px}
-.btn.ghost{background:transparent;border:1px solid var(--bd2);color:var(--tx2)}
+.btn:hover{filter:brightness(1.12)}
+.btn.ghost{background:transparent;border:1px solid var(--ac);color:var(--ac)}
 .btn.danger{background:var(--err)}
 .empty{text-align:center;color:var(--tx3);padding:48px 20px;border:1px dashed var(--bd2);border-radius:12px}
 .empty b{color:var(--tx2);display:block;margin-bottom:6px;font-size:15px}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.bartrk{height:8px;background:#0a0a0a;border-radius:5px;overflow:hidden;margin:4px 0}
+.bartrk{height:8px;background:var(--track);border-radius:5px;overflow:hidden;margin:4px 0}
 .barfl{height:100%;border-radius:5px}
 .donut{width:160px;height:160px;border-radius:50%;flex-shrink:0}
 .donut-c{width:90px;height:90px;border-radius:50%;background:var(--bg);position:absolute;inset:35px}
 .legend span{display:flex;align-items:center;gap:8px;font-size:13px;margin:5px 0}
 .legend .sw{width:10px;height:10px;border-radius:3px}
-.mem{border-bottom:1px solid var(--bd);padding:14px 0}
-.mem .hdr{font-size:12px;color:var(--tx3);font-family:var(--mono);margin-bottom:6px}
-.mem .tags span{display:inline-block;font-size:11px;background:#1a1a1a;border:1px solid var(--bd);border-radius:5px;padding:1px 7px;margin-right:6px;color:var(--tx2)}
-.mem .body{color:var(--tx);font-size:14px;margin:8px 0;line-height:1.5}
-.mem .ftr{font-size:12px;color:var(--tx3);font-family:var(--mono)}
+.mem{background:var(--card);border:1px solid var(--bd);border-left:3px solid var(--ac);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.mem .hdr{font-size:12px;color:var(--tx4);font-family:var(--mono);margin-bottom:6px}
+.mem .tags span{display:inline-block;font-size:11px;background:transparent;border:1px solid var(--bd2);border-radius:5px;padding:1px 7px;margin-right:6px;color:var(--tx2)}
+.mem .body{color:var(--tx2);font-size:14px;margin:8px 0;line-height:1.5}
+.mem .ftr{font-size:12px;color:var(--tx4);font-family:var(--mono)}
 .agent{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:14px}
 .agent .top{display:flex;justify-content:space-between;align-items:center}
 .agent .id{color:var(--tx);font-weight:600;font-family:var(--mono)}
 .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
-.badge.pro{background:rgba(139,92,246,.18);color:#a78bfa}
-.badge.free{background:#1a1a1a;color:var(--tx3)}
+.badge.pro{background:var(--ac);color:#fff}
+.badge.free{background:#333;color:#888}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
-.tbl th{text-align:left;color:var(--tx3);font-weight:600;font-size:11px;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--bd)}
+.tbl th{text-align:left;color:var(--tx3);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--bd)}
 .tbl td{padding:9px 10px;border-bottom:1px solid var(--bd);font-family:var(--mono);color:var(--tx2)}
+.tbl tr:nth-child(even) td{background:var(--row-alt)}
+.tbl tr:hover td{background:var(--active-bg)}
 .big{font-size:64px;font-weight:800;color:var(--tx);text-align:center;letter-spacing:-.03em}
 .statusline{display:flex;align-items:center;gap:12px;font-size:18px;color:var(--tx);font-weight:600}
 .dot{width:12px;height:12px;border-radius:50%}
+.dot.crit{animation:pulsedot 1.1s infinite}
+@keyframes pulsedot{0%{box-shadow:0 0 0 0 rgba(255,68,68,.6)}70%{box-shadow:0 0 0 8px rgba(255,68,68,0)}100%{box-shadow:0 0 0 0 rgba(255,68,68,0)}}
+.up{color:var(--ok);font-weight:800}
+.down{color:var(--err);font-weight:800}
+.neu{color:var(--tx3);font-weight:800}
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--bd)}
 .sw-t{width:42px;height:24px;border-radius:999px;background:#27272a;position:relative;cursor:pointer;border:0}
 .sw-t.on{background:var(--ac)}
 .sw-t::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
 .sw-t.on::after{left:21px}
 .row-in{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.row-in input,.row-in select{background:#0a0a0a;border:1px solid var(--bd);border-radius:8px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--mono)}
+.row-in input,.row-in select{background:var(--track);border:1px solid var(--bd);border-radius:8px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--mono)}
 .mnav{display:none}
 @media(max-width:860px){
   .side{display:none}.main{padding:24px 18px 80px}.pulse{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}
+  .topbar{top:10px;right:12px}
   .mnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--bd);z-index:50}
   .mnav a{flex:1;text-align:center;padding:12px 0;color:var(--tx3);font-size:12px}
   .mnav a.on{color:var(--ac)}
 }`;
 
 function shell(active: string, title: string, sub: string, body: string): string {
-  const side = NAVS.map(([h, t]) => `<a href="${h}" class="${active === h ? "on" : ""}">${t}</a>`).join("");
+  const side = NAVS.map(([h, t]) => `<a href="${h}" class="${active === h ? "on" : ""}"${active === h ? ` style="--na:${NAV_C[h] ?? "var(--ac)"}"` : ""}>${t}</a>`).join("");
   const mob = MOBILE.map(([h, t]) => `<a href="${h}" class="${active === h ? "on" : ""}">${t}</a>`).join("");
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>${esc(title)} · Console</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22 fill=%22%238b5cf6%22>◆</text></svg>"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>(function(){try{if(localStorage.getItem('admin-theme')==='light')document.documentElement.setAttribute('data-theme','light')}catch(e){}})();</script>
 <style>${ADMIN_CSS}</style></head><body>
+<div class="topbar">
+  <button class="theme-tg" onclick="tgTheme()" aria-label="Toggle light/dark theme" title="Toggle theme">
+    <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+    <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
+  <a class="lg" href="/admin/logout">Logout</a>
+</div>
 <div class="layout">
-  <nav class="side"><div class="logo"><b>◆</b> AgentMemo</div>${side}<div class="sp"></div><div class="ft"><a href="https://agentmemo.dev" target="_blank">agentmemo.dev ↗</a><a href="/admin/logout">Logout</a></div></nav>
+  <nav class="side"><div class="logo"><b>◆</b> AgentMemo</div>${side}<div class="sp"></div><div class="ft"><a href="https://agentmemo.dev" target="_blank">agentmemo.dev ↗</a></div></nav>
   <main class="main"><h1>${esc(title)}</h1><div class="sub">${sub}</div>${body}</main>
 </div>
 <div class="mnav">${mob}</div>
+<script>function tgTheme(){var d=document.documentElement;if(d.getAttribute('data-theme')==='light'){d.removeAttribute('data-theme');try{localStorage.setItem('admin-theme','dark')}catch(e){}}else{d.setAttribute('data-theme','light');try{localStorage.setItem('admin-theme','light')}catch(e){}}}</script>
 </body></html>`;
 }
 
@@ -308,13 +341,13 @@ admin.get("/", async (c) => {
   );
   if (lowTrust.length) {
     const a = lowTrust[0];
-    cards.push(`<div class="card"><h3>🚨 Security Alert</h3><p>Key <span style="font-family:var(--mono)">${esc(a.api_key_id)}</span> has trust ${Number(a.trust_score).toFixed(2)} with ${fmt(Number(a.flagged_writes))} flagged write(s). Auto-flagged by the trust engine.</p><a class="btn" href="/security">Review →</a></div>`);
+    cards.push(`<div class="card" style="border-left-color:#ff4444"><h3>🚨 Security Alert</h3><p>Key <span style="font-family:var(--mono)">${esc(a.api_key_id)}</span> has trust ${Number(a.trust_score).toFixed(2)} with ${fmt(Number(a.flagged_writes))} flagged write(s). Auto-flagged by the trust engine.</p><a class="btn" href="/security">Review →</a></div>`);
   } else if (totalMem > 0) {
-    cards.push(`<div class="card"><h3>🛡️ Security</h3><p>All agents are healthy — no keys below 0.5 trust, none blocked.</p><a class="btn ghost" href="/security">Open security →</a></div>`);
+    cards.push(`<div class="card" style="border-left-color:#00ff88"><h3>🛡️ Security</h3><p>All agents are healthy — no keys below 0.5 trust, none blocked.</p><a class="btn ghost" href="/security">Open security →</a></div>`);
   }
   const opp = await scalar(env, `SELECT COUNT(*) FROM api_keys WHERE tier!='pro' AND revoked=0 AND monthly_usage > 8000`);
   if (opp > 0) {
-    cards.push(`<div class="card"><h3>💡 Opportunity</h3><p>${fmt(opp)} free-tier key(s) are over 8,000 operations this month — close to the 10k line. A good moment for an upgrade nudge.</p><a class="btn" href="/agents">See agents →</a></div>`);
+    cards.push(`<div class="card" style="border-left-color:#ffaa00"><h3>💡 Opportunity</h3><p>${fmt(opp)} free-tier key(s) are over 8,000 operations this month — close to the 10k line. A good moment for an upgrade nudge.</p><a class="btn" href="/agents">See agents →</a></div>`);
   }
 
   const story = cards.length
@@ -391,7 +424,7 @@ admin.get("/memories", async (c) => {
       : `<div class="empty"><b>No memories stored yet.</b>When agents start storing memories, they'll appear here in real time.</div>`;
   } else {
     streamHtml = stream.map((m) => `<div class="mem"><div class="hdr">${esc(m.agent_id)} · ${esc(m.user_id)} · ${ago(Number(m.created_at))}</div>
-      <div class="tags"><span>${esc(m.category ?? "other")}</span><span>importance ${Number(m.importance)}</span></div>
+      <div class="tags"><span style="color:${catColor(m.category ?? "other")};border-color:${catColor(m.category ?? "other")}">${esc(m.category ?? "other")}</span><span>importance ${Number(m.importance)}</span></div>
       <div class="body">${esc(m.content)}</div>
       <div class="ftr">trust ${Number(m.trust_score).toFixed(2)} · outcome ${m.outcome === "success" ? "✅" : m.outcome === "failure" ? "❌" : "—"} · score ${Number(m.outcome_score).toFixed(2)}</div></div>`).join("");
   }
@@ -431,7 +464,7 @@ admin.get("/security", async (c) => {
   const tot = Number(d.healthy) + Number(d.at_risk) + Number(d.blocked);
   const blocked = Number(d.blocked);
   const status = blocked > 0
-    ? `<span class="dot" style="background:var(--err)"></span> ${blocked} key(s) blocked`
+    ? `<span class="dot crit" style="background:var(--err)"></span> ${blocked} key(s) blocked`
     : Number(d.at_risk) > 0
       ? `<span class="dot" style="background:var(--warn)"></span> ${d.at_risk} key(s) at risk`
       : `<span class="dot" style="background:var(--ok)"></span> All systems secure`;
