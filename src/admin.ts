@@ -263,6 +263,70 @@ code.addEventListener('input',function(){if(code.value.length===6)submit()});
 </script></body></html>`;
 }
 
+// Manual-entry enrollment page. No QR image / external QR API — those proved
+// unreliable. We show the secret in clear text with copy buttons and step-by-step
+// instructions for "enter setup key manually" in Google Authenticator.
+function setupPage(secret: string, key?: string): string {
+  // Thread the bootstrap secret into the POST body so /admin/setup authorizes
+  // when ADMIN_DASHBOARD_SECRET is configured (mirrors codePage).
+  const keyField = key ? `, key: ${JSON.stringify(key)}` : "";
+  const secretJs = JSON.stringify(secret);
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>·</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#050505;min-height:100vh;font-family:system-ui,sans-serif}</style></head><body>
+<div style="text-align:center;max-width:480px;margin:0 auto;padding:48px 24px">
+  <div style="font-size:48px;color:#8b5cf6;margin-bottom:24px">◆</div>
+  <h1 style="color:#f5f5f5;font-size:1.5rem;font-weight:700;margin-bottom:8px">Set up 2FA</h1>
+  <p style="color:#737373;margin-bottom:32px">Add AgentMemo Admin to Google Authenticator</p>
+  <div style="background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:24px;text-align:left">
+    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 1</p>
+    <p style="color:#f5f5f5;margin-bottom:16px">Open Google Authenticator on your phone</p>
+    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 2</p>
+    <p style="color:#f5f5f5;margin-bottom:16px">Tap + → Enter setup key manually</p>
+    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 3 — Account name</p>
+    <div style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <code style="color:#8b5cf6;font-size:1rem;font-family:monospace">AgentMemo Admin</code>
+      <button onclick="copy('AgentMemo Admin',this)" style="background:none;border:1px solid #2a2a2a;color:#737373;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem">Copy</button>
+    </div>
+    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 4 — Your secret key</p>
+    <div style="background:#0a0a0a;border:1px solid #8b5cf6;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <code id="secret-display" style="color:#8b5cf6;font-size:1.1rem;font-family:monospace;letter-spacing:0.15em;font-weight:700">${secret}</code>
+      <button onclick="copy(${secretJs},this)" style="background:none;border:1px solid #8b5cf6;color:#8b5cf6;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem">Copy</button>
+    </div>
+    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 5 — Key type</p>
+    <p style="color:#f5f5f5;margin-bottom:0">Select <strong style="color:#8b5cf6">Time based</strong> then tap Add</p>
+  </div>
+  <div style="background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:24px">
+    <p style="color:#f5f5f5;font-weight:600;margin-bottom:16px">Step 6 — Verify setup</p>
+    <p style="color:#737373;font-size:0.9rem;margin-bottom:16px">Enter the 6-digit code from Google Authenticator to confirm:</p>
+    <input type="text" inputmode="numeric" pattern="[0-9]*" id="verify-code" placeholder="000000" maxlength="6" autocomplete="one-time-code" style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:14px;color:#f5f5f5;font-size:1.5rem;text-align:center;letter-spacing:0.5em;font-family:monospace;box-sizing:border-box;margin-bottom:12px" oninput="if(this.value.length>=6)verify()"/>
+    <button onclick="verify()" style="width:100%;background:#8b5cf6;color:#fff;border:none;border-radius:8px;padding:14px;font-size:1rem;font-weight:600;cursor:pointer">Confirm &amp; Access Console →</button>
+    <p id="verify-err" style="color:#ef4444;font-size:0.85rem;text-align:center;margin-top:12px;display:none">Wrong code — try again</p>
+  </div>
+</div>
+<script>
+function copy(text, btn){
+  navigator.clipboard.writeText(text);
+  btn.textContent='Copied!';
+  btn.style.color='#22c55e';
+  setTimeout(function(){btn.textContent='Copy';btn.style.color='';},2000);
+}
+async function verify(){
+  var code=document.getElementById('verify-code').value.padStart(6,'0');
+  if(!/^\\d{6}$/.test(code))return;
+  try{
+    var res=await fetch('/admin/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code${keyField}})});
+    if(res.ok){window.location.href='/';}
+    else{showErr();}
+  }catch(_){showErr();}
+}
+function showErr(){
+  var err=document.getElementById('verify-err');
+  err.style.display='block';
+  setTimeout(function(){err.style.display='none';},3000);
+}
+</script></body></html>`;
+}
+
 // GET /admin/setup — one-time TOTP enrollment (bootstrap-secret gated).
 admin.get("/admin/setup", async (c) => {
   if ((await c.env.CACHE.get("admin_setup_complete")) === "1") return c.redirect("/admin/login", 302);
@@ -271,14 +335,7 @@ admin.get("/admin/setup", async (c) => {
   }
   let secret = await c.env.CACHE.get("admin_totp_secret");
   if (!secret) { secret = base32Encode(crypto.getRandomValues(new Uint8Array(20))); await c.env.CACHE.put("admin_totp_secret", secret); }
-  const otpauth = `otpauth://totp/AgentMemo%20Admin?secret=${secret}&issuer=AgentMemo`;
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauth)}`;
-  const qrFallback = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpauth)}`;
-  const extra = `<img src="${qr}" onerror="this.onerror=null;this.src='${qrFallback}'" alt="QR" style="width:200px;height:200px;border-radius:10px;background:#fff;padding:8px;margin:0 auto 14px;display:block"/>
-    <div class="s" style="margin:0 0 6px">Scan this with Google Authenticator</div>
-    <div style="font-family:monospace;font-size:12px;color:#a1a1aa;word-break:break-all;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:8px;padding:8px;margin-bottom:18px">${secret}</div>
-    <div class="s" style="margin:0 0 10px">Then enter your first 6-digit code to confirm</div>`;
-  return c.html(codePage({ title: "Setup", sub: "Set up two-factor authentication", action: "/admin/setup", extra, key: c.req.query("key") }));
+  return c.html(setupPage(secret, c.req.query("key")));
 });
 
 // POST /admin/setup — verify first code, lock setup, log in.
