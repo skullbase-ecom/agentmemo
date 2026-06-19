@@ -171,200 +171,67 @@ async function isAuthed(c: { req: { header: (k: string) => string | undefined };
   return (await c.env.CACHE.get(`admin_session_${t}`)) === "valid";
 }
 
-// ---- TOTP (pure Web Crypto, Google Authenticator compatible) ------------
-const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-function base32Encode(buf: Uint8Array): string {
-  let bits = 0, val = 0, out = "";
-  for (const b of buf) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
-  if (bits > 0) out += B32[(val << (5 - bits)) & 31];
-  return out;
-}
-function base32Decode(s: string): Uint8Array {
-  s = s.toUpperCase().replace(/[^A-Z2-7]/g, "");
-  let bits = 0, val = 0;
-  const out: number[] = [];
-  for (const ch of s) { const i = B32.indexOf(ch); if (i < 0) continue; val = (val << 5) | i; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } }
-  return new Uint8Array(out);
-}
-async function hotp(secretBytes: Uint8Array, counter: number): Promise<string> {
-  const buf = new ArrayBuffer(8);
-  const dv = new DataView(buf);
-  dv.setUint32(0, Math.floor(counter / 4294967296));
-  dv.setUint32(4, counter >>> 0);
-  const key = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
-  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
-  const off = sig[19] & 0xf;
-  const bin = ((sig[off] & 0x7f) << 24) | (sig[off + 1] << 16) | (sig[off + 2] << 8) | sig[off + 3];
-  return String(bin % 1000000).padStart(6, "0");
-}
-async function totpVerify(secretB32: string, code: string): Promise<boolean> {
-  if (!/^\d{6}$/.test(code)) return false;
-  const sb = base32Decode(secretB32);
-  const ctr = Math.floor(Date.now() / 30000);
-  for (const w of [-1, 0, 1]) if ((await hotp(sb, ctr + w)) === code) return true;
-  return false;
-}
-
 async function createSession(c: { env: Env; header: (k: string, v: string) => void }): Promise<void> {
   const token = crypto.randomUUID();
-  await c.env.CACHE.put(`admin_session_${token}`, String(Date.now()), { expirationTtl: 86400 });
+  // isAuthed() accepts the literal "valid" — keep these two in sync.
+  await c.env.CACHE.put(`admin_session_${token}`, "valid", { expirationTtl: 86400 });
   c.header("Set-Cookie", `admin_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`);
 }
 
-// Setup is gated by the bootstrap secret (ADMIN_DASHBOARD_SECRET) so an attacker
-// who finds the URL before setup can't claim the console. After setup completes,
-// logins are pure TOTP.
-function setupAuthorized(c: { env: Env; req: { query: (k: string) => string | undefined } }, key?: string): boolean {
-  const secret = c.env.ADMIN_DASHBOARD_SECRET;
-  if (!secret) return true; // no bootstrap secret configured -> open setup
-  const provided = key ?? c.req.query("key") ?? "";
-  return provided.length > 0 && timingSafeEqual(provided, secret);
-}
-
-function codePage(opts: { title: string; sub: string; action: string; extra?: string; key?: string }): string {
+// Password login page. Auth is a single shared password compared (constant-time)
+// against the ADMIN_DASHBOARD_SECRET Worker secret — no TOTP, nothing persisted
+// client-side beyond the session cookie.
+function loginPage(): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>·</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#050505;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif;padding:24px}
+body{background:#050505;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;padding:24px}
 .card{background:#141414;border:1px solid #2a2a2a;border-radius:16px;padding:48px;max-width:380px;width:100%;text-align:center;box-shadow:0 0 60px rgba(139,92,246,.15)}
 .card.shake{animation:shake .4s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .dia{font-size:48px;color:#8b5cf6;display:block;margin-bottom:10px}
-.ttl{color:#f5f5f5;font-weight:700;font-size:18px}
 .s{color:#737373;font-size:13px;margin-bottom:28px}
-input.code{font-size:2rem;letter-spacing:.5em;text-align:center;max-width:200px;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:10px;padding:12px 8px;color:#f5f5f5;outline:none;width:100%;caret-color:#8b5cf6}
-input.code.err{border-color:#ef4444}
-input.code:focus{border-color:#2a2a2a}
+input.pw{font-size:1.05rem;text-align:center;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:10px;padding:14px 12px;color:#f5f5f5;outline:none;width:100%;caret-color:#8b5cf6}
+input.pw.err{border-color:#ef4444}
+input.pw:focus{border-color:#2a2a2a}
 .btn{margin-top:18px;background:#8b5cf6;color:#fff;border:0;border-radius:10px;padding:12px 0;width:100%;font-size:15px;font-weight:600;cursor:pointer}
 .btn:hover{background:#7c3aed}
-.hint{color:#52525b;font-size:12px;margin-top:14px}
-${opts.extra ? "" : ""}
+.hint{color:#ef4444;font-size:12px;margin-top:14px;display:none}
 </style></head><body>
 <div class="card" id="card">
   <span class="dia">◆ AgentMemo</span>
-  <div class="s">${opts.sub}</div>
-  ${opts.extra ?? ""}
-  <form id="f"><input class="code" id="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" autofocus/><button class="btn" type="submit">Verify →</button></form>
-  <div class="hint">Code refreshes every 30s</div>
+  <div class="s">Intelligence Console</div>
+  <form id="f"><input class="pw" id="pw" type="password" placeholder="Password" autocomplete="current-password" autofocus/><button class="btn" type="submit">Sign in →</button></form>
+  <div class="hint" id="hint">Wrong password</div>
 </div>
 <script>
-var f=document.getElementById('f'),code=document.getElementById('code'),card=document.getElementById('card');
+var f=document.getElementById('f'),pw=document.getElementById('pw'),card=document.getElementById('card'),hint=document.getElementById('hint');
 async function submit(){
-  if(!/^\\d{6}$/.test(code.value))return;
-  try{var r=await fetch('${opts.action}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code.value${opts.key ? `,key:${JSON.stringify(opts.key)}` : ""}})});
+  if(!pw.value)return;
+  try{var r=await fetch('/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw.value})});
     if(r.ok){card.style.opacity='.4';location.href='/';}
     else{fail();}
   }catch(_){fail();}
 }
-function fail(){code.classList.add('err');card.classList.add('shake');code.value='';setTimeout(function(){code.classList.remove('err');card.classList.remove('shake')},500);}
+function fail(){pw.classList.add('err');card.classList.add('shake');hint.style.display='block';pw.value='';pw.focus();setTimeout(function(){pw.classList.remove('err');card.classList.remove('shake')},500);}
 f.addEventListener('submit',function(e){e.preventDefault();submit()});
-code.addEventListener('input',function(){if(code.value.length===6)submit()});
 </script></body></html>`;
 }
 
-// Manual-entry enrollment page. No QR image / external QR API — those proved
-// unreliable. We show the secret in clear text with copy buttons and step-by-step
-// instructions for "enter setup key manually" in Google Authenticator.
-function setupPage(secret: string, key?: string): string {
-  // Thread the bootstrap secret into the POST body so /admin/setup authorizes
-  // when ADMIN_DASHBOARD_SECRET is configured (mirrors codePage).
-  const keyField = key ? `, key: ${JSON.stringify(key)}` : "";
-  const secretJs = JSON.stringify(secret);
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>·</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#050505;min-height:100vh;font-family:system-ui,sans-serif}</style></head><body>
-<div style="text-align:center;max-width:480px;margin:0 auto;padding:48px 24px">
-  <div style="font-size:48px;color:#8b5cf6;margin-bottom:24px">◆</div>
-  <h1 style="color:#f5f5f5;font-size:1.5rem;font-weight:700;margin-bottom:8px">Set up 2FA</h1>
-  <p style="color:#737373;margin-bottom:32px">Add AgentMemo Admin to Google Authenticator</p>
-  <div style="background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:24px;text-align:left">
-    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 1</p>
-    <p style="color:#f5f5f5;margin-bottom:16px">Open Google Authenticator on your phone</p>
-    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 2</p>
-    <p style="color:#f5f5f5;margin-bottom:16px">Tap + → Enter setup key manually</p>
-    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 3 — Account name</p>
-    <div style="background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <code style="color:#8b5cf6;font-size:1rem;font-family:monospace">AgentMemo Admin</code>
-      <button onclick="copy('AgentMemo Admin',this)" style="background:none;border:1px solid #2a2a2a;color:#737373;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem">Copy</button>
-    </div>
-    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 4 — Your secret key</p>
-    <div style="background:#0a0a0a;border:1px solid #8b5cf6;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <code id="secret-display" style="color:#8b5cf6;font-size:1.1rem;font-family:monospace;letter-spacing:0.15em;font-weight:700">${secret}</code>
-      <button onclick="copy(${secretJs},this)" style="background:none;border:1px solid #8b5cf6;color:#8b5cf6;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem">Copy</button>
-    </div>
-    <p style="color:#737373;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">Step 5 — Key type</p>
-    <p style="color:#f5f5f5;margin-bottom:0">Select <strong style="color:#8b5cf6">Time based</strong> then tap Add</p>
-  </div>
-  <div style="background:#141414;border:1px solid #2a2a2a;border-radius:12px;padding:24px;margin-bottom:24px">
-    <p style="color:#f5f5f5;font-weight:600;margin-bottom:16px">Step 6 — Verify setup</p>
-    <p style="color:#737373;font-size:0.9rem;margin-bottom:16px">Enter the 6-digit code from Google Authenticator to confirm:</p>
-    <input type="text" inputmode="numeric" pattern="[0-9]*" id="verify-code" placeholder="000000" maxlength="6" autocomplete="one-time-code" style="width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:14px;color:#f5f5f5;font-size:1.5rem;text-align:center;letter-spacing:0.5em;font-family:monospace;box-sizing:border-box;margin-bottom:12px" oninput="if(this.value.length>=6)verify()"/>
-    <button onclick="verify()" style="width:100%;background:#8b5cf6;color:#fff;border:none;border-radius:8px;padding:14px;font-size:1rem;font-weight:600;cursor:pointer">Confirm &amp; Access Console →</button>
-    <p id="verify-err" style="color:#ef4444;font-size:0.85rem;text-align:center;margin-top:12px;display:none">Wrong code — try again</p>
-  </div>
-</div>
-<script>
-function copy(text, btn){
-  navigator.clipboard.writeText(text);
-  btn.textContent='Copied!';
-  btn.style.color='#22c55e';
-  setTimeout(function(){btn.textContent='Copy';btn.style.color='';},2000);
-}
-async function verify(){
-  var code=document.getElementById('verify-code').value.padStart(6,'0');
-  if(!/^\\d{6}$/.test(code))return;
-  try{
-    var res=await fetch('/admin/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code${keyField}})});
-    if(res.ok){window.location.href='/';}
-    else{showErr();}
-  }catch(_){showErr();}
-}
-function showErr(){
-  var err=document.getElementById('verify-err');
-  err.style.display='block';
-  setTimeout(function(){err.style.display='none';},3000);
-}
-</script></body></html>`;
-}
-
-// GET /admin/setup — one-time TOTP enrollment (bootstrap-secret gated).
-admin.get("/admin/setup", async (c) => {
-  if ((await c.env.CACHE.get("admin_setup_complete")) === "1") return c.redirect("/admin/login", 302);
-  if (!setupAuthorized(c)) {
-    return c.html(`<!DOCTYPE html><body style="background:#050505;color:#71717a;font-family:system-ui;display:flex;height:100vh;align-items:center;justify-content:center;text-align:center"><div><div style="color:#ef4444;font-size:40px">◆</div><p>Setup locked.<br/>Open <code>/admin/setup?key=YOUR_BOOTSTRAP_SECRET</code></p></div></body>`, 403);
-  }
-  let secret = await c.env.CACHE.get("admin_totp_secret");
-  if (!secret) { secret = base32Encode(crypto.getRandomValues(new Uint8Array(20))); await c.env.CACHE.put("admin_totp_secret", secret); }
-  return c.html(setupPage(secret, c.req.query("key")));
-});
-
-// POST /admin/setup — verify first code, lock setup, log in.
-admin.post("/admin/setup", async (c) => {
-  if ((await c.env.CACHE.get("admin_setup_complete")) === "1") return c.json({ error: "already set up" }, 409);
-  const body = (await c.req.json().catch(() => ({}))) as { code?: string; key?: string };
-  if (!setupAuthorized(c, body.key)) return c.json({ error: "unauthorized" }, 403);
-  const secret = await c.env.CACHE.get("admin_totp_secret");
-  if (!secret || !body.code || !(await totpVerify(secret, body.code))) return c.json({ error: "invalid code" }, 401);
-  await c.env.CACHE.put("admin_setup_complete", "1");
-  await createSession(c);
-  return c.json({ ok: true });
-});
-
-// GET /admin/login — TOTP code entry.
+// GET /admin/login — password entry.
 admin.get("/admin/login", async (c) => {
   if (await isAuthed(c)) return c.redirect("/", 302);
-  if ((await c.env.CACHE.get("admin_setup_complete")) !== "1") return c.redirect("/admin/setup", 302);
-  return c.html(codePage({ title: "Login", sub: "Intelligence Console", action: "/admin/login" }));
+  return c.html(loginPage());
 });
 
-// POST /admin/login — verify TOTP, create session.
+// POST /admin/login — compare password against ADMIN_DASHBOARD_SECRET, create session.
 admin.post("/admin/login", async (c) => {
   const ip = c.req.header("cf-connecting-ip") || "unknown";
   if ((await bumpRateWindow(c.env, `adminlogin:${ip}`, 3600, Date.now())) > 5) return c.json({ error: "too many attempts" }, 429);
-  if ((await c.env.CACHE.get("admin_setup_complete")) !== "1") return c.json({ error: "not configured" }, 503);
-  const secret = await c.env.CACHE.get("admin_totp_secret");
-  const body = (await c.req.json().catch(() => ({}))) as { code?: string };
-  if (!secret || !body.code || !(await totpVerify(secret, body.code))) return c.json({ error: "invalid code" }, 401);
+  const expected = c.env.ADMIN_DASHBOARD_SECRET;
+  if (!expected) return c.json({ error: "not configured" }, 503);
+  const body = (await c.req.json().catch(() => ({}))) as { password?: string };
+  if (!body.password || !timingSafeEqual(body.password, expected)) return c.json({ error: "invalid password" }, 401);
   await createSession(c);
   return c.json({ ok: true });
 });
