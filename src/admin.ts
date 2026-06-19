@@ -293,7 +293,7 @@ admin.get("/", async (c) => {
   const [mem24, agents24, signupsToday, proCount, totalMem, series] = await Promise.all([
     scalar(env, `SELECT COUNT(*) FROM memories WHERE created_at >= ?`, dayAgo),
     scalar(env, `SELECT COUNT(DISTINCT agent_id) FROM memories WHERE created_at >= ?`, dayAgo),
-    scalar(env, `SELECT COUNT(*) FROM api_keys WHERE created_at >= ?`, sod),
+    scalar(env, `SELECT COUNT(*) FROM api_keys WHERE revoked = 0 AND created_at >= ?`, sod),
     scalar(env, `SELECT COUNT(*) FROM api_keys WHERE tier='pro' AND revoked=0`),
     scalar(env, `SELECT COUNT(*) FROM memories`),
     dailySeries(env, now),
