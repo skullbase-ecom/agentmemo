@@ -200,6 +200,15 @@ Errors return the matching HTTP status with a JSON body
 - Re-using the same key is fine and expected; one key can serve many users and agents.
 `;
 
+// RFC 9116 security.txt — security contact and disclosure policy. Served at both
+// /.well-known/security.txt (canonical) and /security.txt (legacy location).
+export const SECURITY_TXT = `Contact: mailto:security@agentmemo.dev
+Expires: 2027-06-19T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://agentmemo.dev/.well-known/security.txt
+Policy: https://agentmemo.dev/security
+`;
+
 export const AGENT_JSON = {
   schema_version: "1.0",
   protocol: "auth.md/api_key",

@@ -28,7 +28,7 @@ import signup from "./routes/signup";
 import webhooks from "./routes/webhooks";
 import { LANDING_HTML } from "./landing";
 import { DOCS_HTML } from "./docs";
-import { AUTH_MD, AGENT_JSON } from "./wellknown";
+import { AUTH_MD, AGENT_JSON, SECURITY_TXT } from "./wellknown";
 import { ABOUT_HTML } from "./about";
 import { PRICING_HTML } from "./pricing";
 import {
@@ -194,6 +194,16 @@ app.get("/.well-known/agent.json", (c) => {
   c.header("cache-control", "public, max-age=3600");
   return c.json(AGENT_JSON);
 });
+
+// RFC 9116 security.txt — served at the canonical .well-known path and the
+// legacy root path.
+const securityTxt = (c: AppContext) => {
+  c.header("content-type", "text/plain; charset=utf-8");
+  c.header("cache-control", "public, max-age=3600");
+  return c.body(SECURITY_TXT);
+};
+app.get("/.well-known/security.txt", securityTxt);
+app.get("/security.txt", securityTxt);
 
 // ---- AI / agent discoverability surface --------------------------------
 const textRoute = (body: string, contentType: string) => (c: AppContext) => {
