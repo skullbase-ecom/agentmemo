@@ -47,6 +47,7 @@ import { STATUS_HTML, runStatusChecks } from "./status";
 import { OBSERVATORY_HTML, runObservatory } from "./observatory";
 import { CHANGELOG_HTML } from "./changelog";
 import { NOT_FOUND_HTML, ERROR_HTML } from "./error-pages";
+import { sendReport } from "./report";
 import {
   SECURITY_HTML,
   MANIFESTO_HTML,
@@ -339,6 +340,19 @@ app.get("/health", async (c) => {
   return c.json({ status: db === "ok" ? "healthy" : "degraded", db }, db === "ok" ? 200 : 503);
 });
 
+// Operator-gated trigger to send the daily ops report on demand (uses
+// ADMIN_SECRET). Optional JSON body { "to": ["a@b.com"] } overrides recipients
+// for a one-off test send. Used to verify the email pipeline.
+app.post("/internal/report/run", async (c) => {
+  const secret = c.req.header("x-admin-secret") ?? "";
+  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { to?: string[] };
+  const result = await sendReport(c.env, Date.now(), body?.to);
+  return c.json(result, result.ok ? 200 : 502);
+});
+
 // Admin-gated key minting (uses ADMIN_SECRET, not an API key).
 app.route("/auth", auth);
 
@@ -414,5 +428,16 @@ export default {
     const host = request.headers.get("host") ?? "";
     if (host.startsWith("nadeem.")) return adminApp.fetch(request, env, ctx);
     return app.fetch(request, env, ctx);
+  },
+  // Cron trigger (wrangler.toml): "30 4 * * *" = 04:30 UTC = 10:00 IST daily.
+  // Sends the operations digest to REPORT_RECIPIENTS via Resend.
+  scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): void {
+    ctx.waitUntil(
+      sendReport(env, Date.now()).then((r) => {
+        if (r.skipped) console.warn("daily report skipped:", r.skipped);
+        else if (!r.ok) console.error("daily report send failed:", r.status, JSON.stringify(r.body));
+        else console.log("daily report sent", r.status);
+      }),
+    );
   },
 };

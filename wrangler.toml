@@ -13,6 +13,10 @@ routes = [
 # Serve only via the custom domain; disable the *.workers.dev URL.
 workers_dev = false
 
+# Cron: daily operations digest email at 04:30 UTC = 10:00 IST.
+[triggers]
+crons = ["30 4 * * *"]
+
 # Workers AI binding — used to generate embeddings for semantic search.
 [ai]
 binding = "AI"
@@ -45,6 +49,8 @@ FREE_TIER_MONTHLY_LIMIT = "10000"
 API_RATE_LIMIT_PER_MIN = "100"
 # Self-serve signups allowed per IP per hour.
 SIGNUP_RATE_LIMIT_PER_HOUR = "3"
+# From: header for the daily operations report email (Resend).
+REPORT_FROM = "AgentMemo Reports <reports@agentmemo.dev>"
 
 # Secrets (set via `wrangler secret put`, never commit):
 #   ADMIN_SECRET         — required to mint privileged keys (POST /auth/keys)

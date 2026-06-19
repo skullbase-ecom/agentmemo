@@ -16,6 +16,10 @@ export interface Env {
   ADMIN_SECRET?: string;
   DODO_WEBHOOK_SECRET?: string;
   ADMIN_DASHBOARD_SECRET?: string;
+  RESEND_API_KEY?: string;       // Resend API key for the daily report email
+  REPORT_RECIPIENTS?: string;    // comma-separated To: addresses for the daily report
+  // Vars:
+  REPORT_FROM?: string;          // From: header for the daily report
 }
 
 /** The authenticated API key, attached to the request context by auth middleware. */
