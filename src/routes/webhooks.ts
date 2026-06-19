@@ -85,14 +85,18 @@ webhooks.post("/dodo", async (c) => {
   const raw = await c.req.text();
   const secret = c.env.DODO_WEBHOOK_SECRET;
 
-  if (secret) {
+  // Webhooks are ALWAYS verified. No secret configured -> reject (never accept
+  // unverified events — that path previously allowed forged Pro upgrades).
+  if (!secret) {
+    console.error("DODO_WEBHOOK_SECRET not set; rejecting webhook");
+    return c.json({ error: "webhook verification not configured", code: "webhook_unconfigured", docs: "https://agentmemo.dev/docs" }, 401);
+  }
+  {
     const id = c.req.header("webhook-id") || "";
     const ts = c.req.header("webhook-timestamp") || "";
     const sig = c.req.header("webhook-signature") || "";
     const ok = id && ts && sig && (await verifyStandardWebhook(secret, id, ts, raw, sig).catch(() => false));
-    if (!ok) return c.json({ error: { status: 401, message: "invalid webhook signature" } }, 401);
-  } else {
-    console.warn("DODO_WEBHOOK_SECRET not set; accepting webhook unverified");
+    if (!ok) return c.json({ error: "invalid webhook signature", code: "invalid_signature", docs: "https://agentmemo.dev/docs" }, 401);
   }
 
   let event: Record<string, unknown>;

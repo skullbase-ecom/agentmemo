@@ -150,9 +150,11 @@ memory.post("/store", requireScope("write"), async (c) => {
     .run();
 
   // Audit + trust accounting (fire-and-forget). Burst/spam heuristics inside.
+  const ip = c.req.header("cf-connecting-ip") || "";
+  const ipHash = ip ? (await sha256Hex(ip)).slice(0, 16) : null;
   c.executionCtx.waitUntil(recordWrite(c.env, key.id, now, contentHash));
   c.executionCtx.waitUntil(
-    audit(c.env, { memory_id: id, action: "store", api_key_id: key.id, trust_score: trust.trust_score, outcome, now }),
+    audit(c.env, { memory_id: id, action: "store", api_key_id: key.id, trust_score: trust.trust_score, outcome, ip_hash: ipHash, now }),
   );
 
   // Invalidate cached retrieval results for this scope.
