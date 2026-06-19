@@ -7,8 +7,22 @@ import { embed, cosineSimilarity, approxTokens } from "../lib/embeddings";
 import { requireScope } from "../middleware/auth";
 import { classifyOne } from "../lib/classify";
 import { getAgentTrust, recordWrite, adjustTrust, audit } from "../lib/security";
+import { bumpRateWindow } from "../lib/quota";
 
 const memory = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+// Content policy — substrings that mark prompt-injection / exfiltration payloads.
+// Matched case-insensitively against stored content; a hit is rejected with 400.
+const BLOCKED_CONTENT = [
+  "system override",
+  "ignore all prior instructions",
+  "exfiltrate",
+  "attacker.example",
+  "pentest",
+];
+
+// Max memory writes per user_id (within an api key) per hour — blunts bulk injection.
+const MAX_STORES_PER_USER_HOUR = 100;
 
 interface StoreBody {
   user_id?: unknown;
@@ -94,6 +108,17 @@ memory.post("/store", requireScope("write"), async (c) => {
   const key = c.get("apiKey");
   const now = Date.now();
   const id = memoryId();
+
+  // Content policy — reject known prompt-injection / exfiltration markers.
+  const lc = content.toLowerCase();
+  if (BLOCKED_CONTENT.some((p) => lc.includes(p))) {
+    fail(400, "content_policy_violation", "content_policy_violation");
+  }
+
+  // Bulk-injection guard — cap stores per user_id (within this key) per hour.
+  if ((await bumpRateWindow(c.env, `memstore:${key.id}:${userId}`, 3600, now)) > MAX_STORES_PER_USER_HOUR) {
+    fail(429, "memory write rate limit exceeded for this user", "rate_limited");
+  }
 
   // OWASP ASI06 — block writes from low-trust keys.
   const trust = await getAgentTrust(c.env, key.id);

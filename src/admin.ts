@@ -453,7 +453,12 @@ admin.get("/security", async (c) => {
     <p style="font-size:14px;line-height:1.6;color:var(--tx2)"><b style="color:var(--tx)">Forged Pro upgrades via unverified webhook.</b> While <code>DODO_WEBHOOK_SECRET</code> was unset, <code>/webhooks/dodo</code> accepted unverified events, letting an external actor upgrade 5 keys to Pro (owner <code>recon@test.invalid</code>, e.g. <code>victim-PENTEST-MARK</code>).</p>
     <p style="font-size:13px;color:var(--tx3);margin-top:8px">Fixed Jun 19, 2026: webhook now rejects with 401 unless the signature verifies; affected keys revoked &amp; downgraded; request IP hashing added to the audit log.</p>
   </div>`;
-  const body = `${incident}<div class="card"><div class="statusline">${status}</div></div><div class="card"><h3 style="color:var(--tx);font-size:15px;margin-bottom:14px">Trust distribution</h3>${distHtml}</div><div class="card"><h3 style="color:var(--tx);font-size:15px;margin-bottom:6px">Recent events</h3>${evHtml}</div>`;
+  const injectionIncident = `<div class="card" style="border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.05)">
+    <h3 style="color:var(--warn);font-size:15px;margin-bottom:8px">⚠ Incident — resolved</h3>
+    <p style="font-size:14px;line-height:1.6;color:var(--tx2)"><b style="color:var(--tx)">Prompt-injection pentest payloads in stored memories.</b> A pentest seeded 9 memories under <code>victim_*</code> accounts carrying injection markers (<code>PENTEST-MARKER</code>, <code>SYSTEM OVERRIDE</code>, exfiltration strings). The 5 keys involved (owner <code>recon@test.invalid</code>) were already revoked.</p>
+    <p style="font-size:13px;color:var(--tx3);margin-top:8px">Fixed Jun 19, 2026: removed all 9 victim memories; added content-policy filtering and a per-user write cap (100/hr) on <code>POST /memory/store</code> to block bulk injection. Revoked attack keys retained as evidence.</p>
+  </div>`;
+  const body = `${injectionIncident}${incident}<div class="card"><div class="statusline">${status}</div></div><div class="card"><h3 style="color:var(--tx);font-size:15px;margin-bottom:14px">Trust distribution</h3>${distHtml}</div><div class="card"><h3 style="color:var(--tx);font-size:15px;margin-bottom:6px">Recent events</h3>${evHtml}</div>`;
   return c.html(shell("/security", "Security", "Peace of mind", body));
 });
 
