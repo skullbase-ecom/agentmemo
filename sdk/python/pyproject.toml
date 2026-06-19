@@ -9,7 +9,7 @@ description = "Persistent memory for AI agents — store, retrieve, and recall c
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Dr. Nadeem Shaikh", email = "nadeembyit@gmail.com" }]
+authors = [{ name = "Dr. Nadeem Shaikh", email = "nadeem@agentmemo.dev" }]
 keywords = ["ai", "agent", "memory", "llm", "mcp", "semantic-search", "agentmemo"]
 dependencies = []
 

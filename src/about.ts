@@ -67,7 +67,7 @@ const body = `${STYLE}<div class="ab wrap">
 
   <div class="closing">No press release. No marketing budget. No launch party.<br/>They found us.</div>
 
-  <div class="contact">Get in touch: <a href="mailto:nadeembyit@gmail.com">nadeembyit@gmail.com</a> · <a href="/manifesto">Read our manifesto →</a></div>
+  <div class="contact">Get in touch: <a href="mailto:nadeem@agentmemo.dev">nadeem@agentmemo.dev</a> · <a href="/manifesto">Read our manifesto →</a></div>
 </div>`;
 
 export const ABOUT_HTML = shell({
