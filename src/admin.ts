@@ -152,7 +152,7 @@ function shell(active: string, title: string, sub: string, body: string): string
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>${ADMIN_CSS}</style></head><body>
 <div class="layout">
-  <nav class="side"><div class="logo"><b>◆</b> AgentMemo</div>${side}<div class="sp"></div><div class="ft"><a href="https://agentmemo.dev" target="_blank">agentmemo.dev ↗</a><a href="/logout" onclick="fetch('/logout',{method:'POST'}).then(()=>location.href='/')">Logout</a></div></nav>
+  <nav class="side"><div class="logo"><b>◆</b> AgentMemo</div>${side}<div class="sp"></div><div class="ft"><a href="https://agentmemo.dev" target="_blank">agentmemo.dev ↗</a><a href="/admin/logout">Logout</a></div></nav>
   <main class="main"><h1>${esc(title)}</h1><div class="sub">${sub}</div>${body}</main>
 </div>
 <div class="mnav">${mob}</div>
@@ -171,60 +171,159 @@ async function isAuthed(c: { req: { header: (k: string) => string | undefined };
   return (await c.env.CACHE.get(`admin_session_${t}`)) === "valid";
 }
 
-const LOGIN_HTML = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>·</title>
+// ---- TOTP (pure Web Crypto, Google Authenticator compatible) ------------
+const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function base32Encode(buf: Uint8Array): string {
+  let bits = 0, val = 0, out = "";
+  for (const b of buf) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+  if (bits > 0) out += B32[(val << (5 - bits)) & 31];
+  return out;
+}
+function base32Decode(s: string): Uint8Array {
+  s = s.toUpperCase().replace(/[^A-Z2-7]/g, "");
+  let bits = 0, val = 0;
+  const out: number[] = [];
+  for (const ch of s) { const i = B32.indexOf(ch); if (i < 0) continue; val = (val << 5) | i; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } }
+  return new Uint8Array(out);
+}
+async function hotp(secretBytes: Uint8Array, counter: number): Promise<string> {
+  const buf = new ArrayBuffer(8);
+  const dv = new DataView(buf);
+  dv.setUint32(0, Math.floor(counter / 4294967296));
+  dv.setUint32(4, counter >>> 0);
+  const key = await crypto.subtle.importKey("raw", secretBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const off = sig[19] & 0xf;
+  const bin = ((sig[off] & 0x7f) << 24) | (sig[off + 1] << 16) | (sig[off + 2] << 8) | sig[off + 3];
+  return String(bin % 1000000).padStart(6, "0");
+}
+async function totpVerify(secretB32: string, code: string): Promise<boolean> {
+  if (!/^\d{6}$/.test(code)) return false;
+  const sb = base32Decode(secretB32);
+  const ctr = Math.floor(Date.now() / 30000);
+  for (const w of [-1, 0, 1]) if ((await hotp(sb, ctr + w)) === code) return true;
+  return false;
+}
+
+async function createSession(c: { env: Env; header: (k: string, v: string) => void }): Promise<void> {
+  const token = crypto.randomUUID();
+  await c.env.CACHE.put(`admin_session_${token}`, String(Date.now()), { expirationTtl: 86400 });
+  c.header("Set-Cookie", `admin_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`);
+}
+
+// Setup is gated by the bootstrap secret (ADMIN_DASHBOARD_SECRET) so an attacker
+// who finds the URL before setup can't claim the console. After setup completes,
+// logins are pure TOTP.
+function setupAuthorized(c: { env: Env; req: { query: (k: string) => string | undefined } }, key?: string): boolean {
+  const secret = c.env.ADMIN_DASHBOARD_SECRET;
+  if (!secret) return true; // no bootstrap secret configured -> open setup
+  const provided = key ?? c.req.query("key") ?? "";
+  return provided.length > 0 && timingSafeEqual(provided, secret);
+}
+
+function codePage(opts: { title: string; sub: string; action: string; extra?: string; key?: string }): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><title>·</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#050505;height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
-.box{text-align:center}
-#dia{font-size:48px;color:#8b5cf6;transition:color .2s;display:block;margin-bottom:28px}
-#dia.bad{color:#ef4444}
-#dia.good{animation:pulse 1s ease}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
-.shake{animation:shake .4s}
+body{background:#050505;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Inter',system-ui,sans-serif;padding:24px}
+.card{background:#141414;border:1px solid #2a2a2a;border-radius:16px;padding:48px;max-width:380px;width:100%;text-align:center;box-shadow:0 0 60px rgba(139,92,246,.15)}
+.card.shake{animation:shake .4s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-input{background:#0f0f0f;border:1px solid #1f1f1f;border-radius:10px;padding:14px 16px;color:#f5f5f5;font-size:16px;width:240px;outline:none;text-align:center;letter-spacing:3px;caret-color:#8b5cf6}
-input:focus{border-color:#2a2a2a}
-.arrow{margin-top:18px;background:none;border:0;color:#52525b;font-size:22px;cursor:pointer}
-.arrow:hover{color:#8b5cf6}
-.fade{opacity:0;transition:opacity .5s}
+.dia{font-size:48px;color:#8b5cf6;display:block;margin-bottom:10px}
+.ttl{color:#f5f5f5;font-weight:700;font-size:18px}
+.s{color:#737373;font-size:13px;margin-bottom:28px}
+input.code{font-size:2rem;letter-spacing:.5em;text-align:center;max-width:200px;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:10px;padding:12px 8px;color:#f5f5f5;outline:none;width:100%;caret-color:#8b5cf6}
+input.code.err{border-color:#ef4444}
+input.code:focus{border-color:#2a2a2a}
+.btn{margin-top:18px;background:#8b5cf6;color:#fff;border:0;border-radius:10px;padding:12px 0;width:100%;font-size:15px;font-weight:600;cursor:pointer}
+.btn:hover{background:#7c3aed}
+.hint{color:#52525b;font-size:12px;margin-top:14px}
+${opts.extra ? "" : ""}
 </style></head><body>
-<div class="box" id="box"><span id="dia">◆</span>
-<form id="f"><input id="p" type="password" autocomplete="off" autofocus/><br/><button class="arrow" type="submit">→</button></form></div>
+<div class="card" id="card">
+  <span class="dia">◆ AgentMemo</span>
+  <div class="s">${opts.sub}</div>
+  ${opts.extra ?? ""}
+  <form id="f"><input class="code" id="code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code" autofocus/><button class="btn" type="submit">Verify →</button></form>
+  <div class="hint">Code refreshes every 30s</div>
+</div>
 <script>
-var f=document.getElementById('f'),p=document.getElementById('p'),dia=document.getElementById('dia'),box=document.getElementById('box');
-f.addEventListener('submit',async function(e){e.preventDefault();
-  try{var r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({p:p.value})});
-    if(r.ok){dia.className='good';box.classList.add('fade');setTimeout(function(){location.href='/'},700);}
-    else{dia.className='bad';box.classList.add('shake');p.value='';setTimeout(function(){dia.className='';box.classList.remove('shake')},500);}
-  }catch(_){dia.className='bad';box.classList.add('shake');setTimeout(function(){dia.className='';box.classList.remove('shake')},500);}
-});
+var f=document.getElementById('f'),code=document.getElementById('code'),card=document.getElementById('card');
+async function submit(){
+  if(!/^\\d{6}$/.test(code.value))return;
+  try{var r=await fetch('${opts.action}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code.value${opts.key ? `,key:${JSON.stringify(opts.key)}` : ""}})});
+    if(r.ok){card.style.opacity='.4';location.href='/';}
+    else{fail();}
+  }catch(_){fail();}
+}
+function fail(){code.classList.add('err');card.classList.add('shake');code.value='';setTimeout(function(){code.classList.remove('err');card.classList.remove('shake')},500);}
+f.addEventListener('submit',function(e){e.preventDefault();submit()});
+code.addEventListener('input',function(){if(code.value.length===6)submit()});
 </script></body></html>`;
+}
 
-admin.post("/login", async (c) => {
-  const ip = c.req.header("cf-connecting-ip") || "unknown";
-  const n = await bumpRateWindow(c.env, `adminlogin:${ip}`, 3600, Date.now());
-  if (n > 5) return c.json({ error: "too many attempts" }, 429);
-  const secret = c.env.ADMIN_DASHBOARD_SECRET;
-  if (!secret) return c.json({ error: "admin not configured" }, 503);
-  const body = (await c.req.json().catch(() => ({}))) as { p?: string };
-  if (!body.p || !timingSafeEqual(body.p, secret)) return c.json({ error: "no" }, 401);
-  const token = crypto.randomUUID();
-  await c.env.CACHE.put(`admin_session_${token}`, "valid", { expirationTtl: 86400 });
-  c.header("Set-Cookie", `admin_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`);
+// GET /admin/setup — one-time TOTP enrollment (bootstrap-secret gated).
+admin.get("/admin/setup", async (c) => {
+  if ((await c.env.CACHE.get("admin_setup_complete")) === "1") return c.redirect("/admin/login", 302);
+  if (!setupAuthorized(c)) {
+    return c.html(`<!DOCTYPE html><body style="background:#050505;color:#71717a;font-family:system-ui;display:flex;height:100vh;align-items:center;justify-content:center;text-align:center"><div><div style="color:#ef4444;font-size:40px">◆</div><p>Setup locked.<br/>Open <code>/admin/setup?key=YOUR_BOOTSTRAP_SECRET</code></p></div></body>`, 403);
+  }
+  let secret = await c.env.CACHE.get("admin_totp_secret");
+  if (!secret) { secret = base32Encode(crypto.getRandomValues(new Uint8Array(20))); await c.env.CACHE.put("admin_totp_secret", secret); }
+  const otpauth = `otpauth://totp/AgentMemo%20Admin?secret=${secret}&issuer=AgentMemo`;
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauth)}`;
+  const qrFallback = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpauth)}`;
+  const extra = `<img src="${qr}" onerror="this.onerror=null;this.src='${qrFallback}'" alt="QR" style="width:200px;height:200px;border-radius:10px;background:#fff;padding:8px;margin:0 auto 14px;display:block"/>
+    <div class="s" style="margin:0 0 6px">Scan this with Google Authenticator</div>
+    <div style="font-family:monospace;font-size:12px;color:#a1a1aa;word-break:break-all;background:#0a0a0a;border:1px solid #1f1f1f;border-radius:8px;padding:8px;margin-bottom:18px">${secret}</div>
+    <div class="s" style="margin:0 0 10px">Then enter your first 6-digit code to confirm</div>`;
+  return c.html(codePage({ title: "Setup", sub: "Set up two-factor authentication", action: "/admin/setup", extra, key: c.req.query("key") }));
+});
+
+// POST /admin/setup — verify first code, lock setup, log in.
+admin.post("/admin/setup", async (c) => {
+  if ((await c.env.CACHE.get("admin_setup_complete")) === "1") return c.json({ error: "already set up" }, 409);
+  const body = (await c.req.json().catch(() => ({}))) as { code?: string; key?: string };
+  if (!setupAuthorized(c, body.key)) return c.json({ error: "unauthorized" }, 403);
+  const secret = await c.env.CACHE.get("admin_totp_secret");
+  if (!secret || !body.code || !(await totpVerify(secret, body.code))) return c.json({ error: "invalid code" }, 401);
+  await c.env.CACHE.put("admin_setup_complete", "1");
+  await createSession(c);
   return c.json({ ok: true });
 });
 
-admin.post("/logout", async (c) => {
+// GET /admin/login — TOTP code entry.
+admin.get("/admin/login", async (c) => {
+  if (await isAuthed(c)) return c.redirect("/", 302);
+  if ((await c.env.CACHE.get("admin_setup_complete")) !== "1") return c.redirect("/admin/setup", 302);
+  return c.html(codePage({ title: "Login", sub: "Intelligence Console", action: "/admin/login" }));
+});
+
+// POST /admin/login — verify TOTP, create session.
+admin.post("/admin/login", async (c) => {
+  const ip = c.req.header("cf-connecting-ip") || "unknown";
+  if ((await bumpRateWindow(c.env, `adminlogin:${ip}`, 3600, Date.now())) > 5) return c.json({ error: "too many attempts" }, 429);
+  if ((await c.env.CACHE.get("admin_setup_complete")) !== "1") return c.json({ error: "not configured" }, 503);
+  const secret = await c.env.CACHE.get("admin_totp_secret");
+  const body = (await c.req.json().catch(() => ({}))) as { code?: string };
+  if (!secret || !body.code || !(await totpVerify(secret, body.code))) return c.json({ error: "invalid code" }, 401);
+  await createSession(c);
+  return c.json({ ok: true });
+});
+
+// GET /admin/logout.
+admin.get("/admin/logout", async (c) => {
   const t = getCookie(c, "admin_session");
   if (t) await c.env.CACHE.delete(`admin_session_${t}`).catch(() => {});
   c.header("Set-Cookie", "admin_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0");
-  return c.json({ ok: true });
+  return c.redirect("/admin/login", 302);
 });
 
-// Guard: everything below requires a session, else serve the login page.
+// Guard: everything below requires a session, else redirect to login.
 admin.use("*", async (c, next) => {
   if (await isAuthed(c)) return next();
-  return c.html(LOGIN_HTML);
+  return c.redirect("/admin/login", 302);
 });
 
 // ---- BRIEF --------------------------------------------------------------
