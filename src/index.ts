@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { HTTPException } from "hono/http-exception";
 import type { Env, Variables, AppContext } from "./types";
+import adminApp from "./admin";
 import { apiKeyAuth } from "./middleware/auth";
 import { trackUsage, stripInternalHeaders } from "./middleware/usage";
 import { rateLimitPerKey, freeTierQuota } from "./middleware/limits";
@@ -397,4 +398,11 @@ app.onError((err, c) => {
   );
 });
 
-export default app;
+// Host-based routing: the admin console lives on nadeem.agentmemo.dev.
+export default {
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
+    const host = request.headers.get("host") ?? "";
+    if (host.startsWith("nadeem.")) return adminApp.fetch(request, env, ctx);
+    return app.fetch(request, env, ctx);
+  },
+};

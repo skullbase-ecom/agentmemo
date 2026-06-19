@@ -15,6 +15,7 @@ export interface Env {
   // Secrets (wrangler secret put):
   ADMIN_SECRET?: string;
   DODO_WEBHOOK_SECRET?: string;
+  ADMIN_DASHBOARD_SECRET?: string;
 }
 
 /** The authenticated API key, attached to the request context by auth middleware. */

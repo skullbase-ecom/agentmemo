@@ -6,7 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 # Custom domain — agentmemo.dev is an active zone in this Cloudflare account.
 # custom_domain=true makes Cloudflare provision the DNS record + edge TLS cert.
 routes = [
-  { pattern = "agentmemo.dev", custom_domain = true }
+  { pattern = "agentmemo.dev", custom_domain = true },
+  { pattern = "nadeem.agentmemo.dev", custom_domain = true }
 ]
 
 # Serve only via the custom domain; disable the *.workers.dev URL.
